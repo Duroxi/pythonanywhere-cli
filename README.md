@@ -1,21 +1,11 @@
-# pythonanywhere-cli 🐍
+# pythonanywhere-cli
 
-A command-line interface for [PythonAnywhere](https://www.pythonanywhere.com), designed for developers and AI agents to manage PythonAnywhere resources without a browser.
-
-## Why?
-
-PythonAnywhere's free tier doesn't support SSH, and the web UI can be cumbersome for repetitive tasks. This CLI tool wraps PythonAnywhere's REST API, making it easy to:
-
-- 📁 Manage files (upload, download, list, delete)
-- 💻 Run commands via remote consoles
-- 🌐 Manage web apps (create, reload, configure)
-- ⏰ Handle scheduled tasks and always-on tasks
-- 📊 Monitor resource usage (CPU, disk)
+CLI tool for automating PythonAnywhere deployments.
 
 ## Installation
 
 ```bash
-pip install pythonanywhere-cli
+pip install -e .
 ```
 
 ## Quick Start
@@ -24,18 +14,15 @@ pip install pythonanywhere-cli
 # Configure your account
 pa init
 
-# List files
-pa files ls /home/yourusername/
+# Deploy a project
+pa deploy ./my-site
 
-# Upload a file
-pa files upload ./index.html /home/yourusername/mysite/index.html
-
-# Create and use a console
+# Or step by step:
+pa files upload ./index.html /home/youruser/mysite/index.html
 pa console create
-pa console send <console-id> "print('hello')"
-
-# Reload your web app
-pa webapp reload yourusername.pythonanywhere.com
+pa webapp create youruser.pythonanywhere.com
+pa webapp config youruser.pythonanywhere.com --source-dir /home/youruser/mysite
+pa webapp reload youruser.pythonanywhere.com
 ```
 
 ## Commands
@@ -43,52 +30,13 @@ pa webapp reload yourusername.pythonanywhere.com
 | Command | Description |
 |---------|-------------|
 | `pa init` | Configure API token and username |
-| `pa files ls <path>` | List files |
-| `pa files upload <local> <remote>` | Upload file |
-| `pa files download <remote> <local>` | Download file |
-| `pa files rm <path>` | Delete file |
-| `pa console ls` | List consoles |
-| `pa console create` | Create a new console |
-| `pa console send <id> <input>` | Send input to console |
+| `pa files upload <local> <remote> [-r]` | Upload file or directory |
+| `pa console create` | Create a Bash console |
+| `pa console send <id> <cmd>` | Send input to console |
 | `pa console output <id>` | Get console output |
 | `pa console kill <id>` | Kill a console |
-| `pa webapp ls` | List web apps |
+| `pa webapp create <domain>` | Create a web app |
+| `pa webapp config <domain> --source-dir <path>` | Configure web app |
+| `pa webapp static <domain> --url <url> --path <path>` | Add static file mapping |
 | `pa webapp reload <domain>` | Reload web app |
-| `pa webapp log <domain>` | View web app log |
-| `pa tasks ls` | List scheduled tasks |
-| `pa always-on ls` | List always-on tasks |
-| `pa status` | Show CPU/disk usage |
-
-## Configuration
-
-Configuration is stored in `~/.pa-cli/config.json`:
-
-```json
-{
-  "username": "yourusername",
-  "token": "your-api-token",
-  "host": "www.pythonanywhere.com"
-}
-```
-
-## API Rate Limits
-
-- Standard endpoints: 40 requests/minute
-- Console `send_input`: 120 requests/minute
-
-## Requirements
-
-- Python 3.8+
-- A PythonAnywhere account (free tier works!)
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Contributing
-
-Contributions welcome! Please open an issue or submit a PR.
-
----
-
-Built with ❤️ for the PythonAnywhere community.
+| `pa deploy <dir> [--domain <domain>]` | One-click deploy |
