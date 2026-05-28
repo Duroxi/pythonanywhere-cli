@@ -5,6 +5,26 @@ from pa_cli.api.files import FilesClient
 from pa_cli.api.consoles import ConsolesClient
 from pa_cli.api.webapps import WebappsClient
 
+POLL_INTERVAL = 2  # seconds between output checks
+MAX_WAIT = 300  # max seconds to wait for a command
+
+
+def _wait_for_console(client: ConsolesClient, username: str, console_id: int) -> str:
+    """Poll console output until the prompt returns or timeout."""
+    elapsed = 0
+    last_output = ""
+    while elapsed < MAX_WAIT:
+        time.sleep(POLL_INTERVAL)
+        elapsed += POLL_INTERVAL
+        result = client.get_output(username, console_id)
+        output = result.get("output", "")
+        if output != last_output:
+            last_output = output
+            # PA console shows $ or >>> when idle
+            if output.rstrip().endswith("$") or output.rstrip().endswith(">>>"):
+                break
+    return last_output
+
 
 def deploy(
     local_dir: str,
@@ -41,31 +61,25 @@ def deploy(
     console_id = console["id"]
 
     # Send setup commands
-    commands = [
-        f"cd {remote_base}",
-    ]
+    commands = [f"cd {remote_base}"]
 
-    # Check if requirements.txt exists locally
     if (local_path / "requirements.txt").exists():
         commands.extend([
-            f"mkvirtualenv {local_path.name} --python={python_version}",
-            f"pip install -r requirements.txt",
+            f"mkvirtualenv {local_path.name} --python=/usr/bin/{python_version}",
+            f"workon {local_path.name} && pip install -r requirements.txt",
         ])
 
     for cmd in commands:
         consoles_client.send_input(username, console_id, cmd + "\n")
-        time.sleep(2)  # Wait for command to execute
-
-    # Get output to verify
-    output = consoles_client.get_output(username, console_id)
-    print(f"Console output: {output.get('output', '')}")
+        _wait_for_console(consoles_client, username, console_id)
 
     # Step 3: Create and configure webapp
     print(f"Creating webapp {domain}...")
     try:
         webapps_client.create(username, domain, python_version)
-    except Exception:
-        pass  # May already exist
+    except Exception as e:
+        if "already exists" not in str(e).lower():
+            raise
 
     webapps_client.update(
         username,

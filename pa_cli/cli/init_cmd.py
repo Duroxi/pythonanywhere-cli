@@ -9,7 +9,7 @@ app = typer.Typer(help="Configure PythonAnywhere account.")
 def init():
     """Interactive setup for PythonAnywhere account."""
     username = typer.prompt("PythonAnywhere username")
-    token = typer.prompt("API Token")
+    token = typer.prompt("API Token", hide_input=True)
     host = typer.prompt("Host", default="www.pythonanywhere.com")
 
     Config.save(username=username, token=token, host=host)
