@@ -1,4 +1,7 @@
+import re
+
 import requests
+import websocket
 from bs4 import BeautifulSoup
 
 
@@ -39,7 +42,7 @@ class ConsoleCrawler:
 
         return "/login/" not in login_resp.url
 
-    def list_consoles(self, username: str) -> list:
+    def list(self, username: str) -> list:
         url = f"{self.base_url}/api/v0/user/{username}/consoles/"
 
         try:
@@ -50,7 +53,7 @@ class ConsoleCrawler:
 
         return resp.json()
 
-    def create_console(self, username: str, executable: str = "bash") -> dict:
+    def create(self, username: str, executable: str = "bash") -> dict:
         csrftoken = self.session.cookies.get("csrftoken")
         if not csrftoken:
             raise Exception("CSRF token not found in session cookies")
@@ -68,3 +71,31 @@ class ConsoleCrawler:
             raise Exception(f"Failed to create console: {e}") from e
 
         return resp.json()
+
+    def activate(self, username: str, console_id: int) -> None:
+        frame_url = f"{self.base_url}/user/{username}/consoles/{console_id}/frame/"
+
+        try:
+            resp = self.session.get(frame_url)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to fetch console frame page: {e}") from e
+
+        match = re.search(r'LoadConsole\("([^"]+)",\s*"([^"]+)",\s*"([^"]+)"', resp.text)
+        if not match:
+            raise Exception("Could not parse WebSocket info from frame page")
+
+        console_server = match.group(1)
+        session_key = match.group(2)
+        parsed_console_id = match.group(3)
+
+        ws = None
+        try:
+            ws = websocket.create_connection(f"wss://{console_server}/sj/websocket")
+            ws.send(f"\x1b[{session_key};{parsed_console_id};;a")
+            ws.send("\x1b[8;24;80t")
+        except Exception as e:
+            raise Exception(f"WebSocket connection failed: {e}") from e
+        finally:
+            if ws:
+                ws.close()
