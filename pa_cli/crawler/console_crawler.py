@@ -38,3 +38,33 @@ class ConsoleCrawler:
             raise Exception(f"Login request failed: {e}") from e
 
         return "/login/" not in login_resp.url
+
+    def list_consoles(self, username: str) -> list:
+        url = f"{self.base_url}/api/v0/user/{username}/consoles/"
+
+        try:
+            resp = self.session.get(url)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to list consoles: {e}") from e
+
+        return resp.json()
+
+    def create_console(self, username: str, executable: str = "bash") -> dict:
+        csrftoken = self.session.cookies.get("csrftoken")
+        if not csrftoken:
+            raise Exception("CSRF token not found in session cookies")
+
+        url = f"{self.base_url}/api/v0/user/{username}/consoles/"
+        headers = {
+            "Referer": f"{self.base_url}/user/{username}/consoles/",
+            "X-CSRFToken": csrftoken,
+        }
+
+        try:
+            resp = self.session.post(url, json={"executable": executable}, headers=headers)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to create console: {e}") from e
+
+        return resp.json()

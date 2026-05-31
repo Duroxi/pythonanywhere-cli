@@ -117,3 +117,141 @@ def test_login_raises_on_post_network_error():
          patch.object(crawler.session, "post", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Login request failed"):
             crawler.login("testuser", "testpass")
+
+
+# --- list_consoles tests ---
+
+
+def test_list_consoles_returns_list():
+    """list_consoles returns the list of console objects from the API."""
+    crawler = ConsoleCrawler()
+    mock_consoles = [
+        {"id": 1, "name": "bash", "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/1/"},
+        {"id": 2, "name": "python3.10", "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/2/"},
+    ]
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = mock_consoles
+    mock_resp.raise_for_status = MagicMock()
+
+    with patch.object(crawler.session, "get", return_value=mock_resp) as mock_get:
+        result = crawler.list_consoles("testuser")
+
+    assert result == mock_consoles
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/api/v0/user/testuser/consoles/")
+
+
+def test_list_consoles_empty():
+    """list_consoles returns empty list when user has no consoles."""
+    crawler = ConsoleCrawler()
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = []
+    mock_resp.raise_for_status = MagicMock()
+
+    with patch.object(crawler.session, "get", return_value=mock_resp):
+        result = crawler.list_consoles("testuser")
+
+    assert result == []
+
+
+def test_list_consoles_raises_on_network_error():
+    """list_consoles raises Exception on network failure."""
+    crawler = ConsoleCrawler()
+
+    with patch.object(crawler.session, "get", side_effect=requests.ConnectionError("timeout")):
+        with pytest.raises(Exception, match="Failed to list consoles"):
+            crawler.list_consoles("testuser")
+
+
+def test_list_consoles_uses_dynamic_host():
+    """list_consoles uses the correct base_url for custom host."""
+    crawler = ConsoleCrawler(host="eu.pythonanywhere.com")
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = []
+    mock_resp.raise_for_status = MagicMock()
+
+    with patch.object(crawler.session, "get", return_value=mock_resp) as mock_get:
+        crawler.list_consoles("testuser")
+
+    mock_get.assert_called_once_with("https://eu.pythonanywhere.com/api/v0/user/testuser/consoles/")
+
+
+# --- create_console tests ---
+
+
+def test_create_console_returns_console_object():
+    """create_console returns the created console object from the API."""
+    crawler = ConsoleCrawler()
+    mock_console = {
+        "id": 12345,
+        "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/12345/",
+        "console_frame_url": "https://www.pythonanywhere.com/user/testuser/consoles/12345/frame/",
+    }
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = mock_console
+    mock_resp.raise_for_status = MagicMock()
+
+    crawler.session.cookies.set("csrftoken", "test-csrf-token")
+
+    with patch.object(crawler.session, "post", return_value=mock_resp) as mock_post:
+        result = crawler.create_console("testuser")
+
+    assert result == mock_console
+    mock_post.assert_called_once()
+    call_args = mock_post.call_args
+    assert call_args[0][0] == "https://www.pythonanywhere.com/api/v0/user/testuser/consoles/"
+    assert call_args[1]["json"] == {"executable": "bash"}
+    assert call_args[1]["headers"]["X-CSRFToken"] == "test-csrf-token"
+    assert "testuser/consoles" in call_args[1]["headers"]["Referer"]
+
+
+def test_create_console_with_custom_executable():
+    """create_console passes custom executable to the API."""
+    crawler = ConsoleCrawler()
+    mock_console = {"id": 99, "console_url": "https://example.com/consoles/99/"}
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = mock_console
+    mock_resp.raise_for_status = MagicMock()
+
+    crawler.session.cookies.set("csrftoken", "csrf-value")
+
+    with patch.object(crawler.session, "post", return_value=mock_resp) as mock_post:
+        result = crawler.create_console("testuser", executable="python3.10")
+
+    call_args = mock_post.call_args
+    assert call_args[1]["json"] == {"executable": "python3.10"}
+    assert result == mock_console
+
+
+def test_create_console_raises_on_network_error():
+    """create_console raises Exception on network failure."""
+    crawler = ConsoleCrawler()
+    crawler.session.cookies.set("csrftoken", "test-csrf-token")
+
+    with patch.object(crawler.session, "post", side_effect=requests.ConnectionError("timeout")):
+        with pytest.raises(Exception, match="Failed to create console"):
+            crawler.create_console("testuser")
+
+
+def test_create_console_raises_on_missing_csrf():
+    """create_console raises Exception when CSRF token is missing from cookies."""
+    crawler = ConsoleCrawler()
+
+    with pytest.raises(Exception, match="CSRF token not found"):
+        crawler.create_console("testuser")
+
+
+def test_create_console_uses_dynamic_host():
+    """create_console uses the correct base_url for custom host."""
+    crawler = ConsoleCrawler(host="eu.pythonanywhere.com")
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"id": 1, "console_url": "https://example.com/"}
+    mock_resp.raise_for_status = MagicMock()
+
+    crawler.session.cookies.set("csrftoken", "csrf")
+
+    with patch.object(crawler.session, "post", return_value=mock_resp) as mock_post:
+        crawler.create_console("testuser")
+
+    call_args = mock_post.call_args
+    assert "eu.pythonanywhere.com" in call_args[0][0]
+    assert "eu.pythonanywhere.com" in call_args[1]["headers"]["Referer"]
