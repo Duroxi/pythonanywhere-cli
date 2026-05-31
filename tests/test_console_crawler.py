@@ -433,3 +433,84 @@ def test_delete_uses_dynamic_host():
     call_args = mock_delete.call_args
     assert "eu.pythonanywhere.com" in call_args[0][0]
     assert "eu.pythonanywhere.com" in call_args[1]["headers"]["Referer"]
+
+
+# --- get_or_create tests ---
+
+
+def test_get_or_create_reuses_existing_console():
+    """get_or_create returns existing console ID when consoles exist."""
+    crawler = ConsoleCrawler()
+    mock_consoles = [
+        {"id": 42, "name": "bash", "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/42/"},
+    ]
+
+    with patch.object(crawler, "list", return_value=mock_consoles) as mock_list:
+        result = crawler.get_or_create("testuser")
+
+    assert result == 42
+    mock_list.assert_called_once_with("testuser")
+
+
+def test_get_or_create_creates_new_when_no_consoles():
+    """get_or_create creates a new console when none exist."""
+    crawler = ConsoleCrawler()
+    mock_new_console = {"id": 100, "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/100/"}
+
+    with patch.object(crawler, "list", return_value=[]) as mock_list, \
+         patch.object(crawler, "create", return_value=mock_new_console) as mock_create:
+        result = crawler.get_or_create("testuser")
+
+    assert result == 100
+    mock_list.assert_called_once_with("testuser")
+    mock_create.assert_called_once_with("testuser", executable="bash")
+
+
+def test_get_or_create_deletes_oldest_when_at_limit():
+    """get_or_create deletes the oldest console and creates new when at limit (2 consoles)."""
+    crawler = ConsoleCrawler()
+    mock_consoles = [
+        {"id": 10, "name": "bash", "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/10/"},
+        {"id": 20, "name": "python3.10", "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/20/"},
+    ]
+    mock_new_console = {"id": 30, "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/30/"}
+
+    with patch.object(crawler, "list", return_value=mock_consoles) as mock_list, \
+         patch.object(crawler, "delete") as mock_delete, \
+         patch.object(crawler, "create", return_value=mock_new_console) as mock_create:
+        result = crawler.get_or_create("testuser")
+
+    assert result == 30
+    mock_list.assert_called_once_with("testuser")
+    mock_delete.assert_called_once_with("testuser", 10)  # Deletes oldest (first in list)
+    mock_create.assert_called_once_with("testuser", executable="bash")
+
+
+def test_get_or_create_with_custom_executable():
+    """get_or_create passes custom executable to create when creating new console."""
+    crawler = ConsoleCrawler()
+    mock_new_console = {"id": 50, "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/50/"}
+
+    with patch.object(crawler, "list", return_value=[]), \
+         patch.object(crawler, "create", return_value=mock_new_console) as mock_create:
+        result = crawler.get_or_create("testuser", executable="python3.10")
+
+    assert result == 50
+    mock_create.assert_called_once_with("testuser", executable="python3.10")
+
+
+def test_get_or_create_with_one_console_reuses():
+    """get_or_create reuses existing console when only one exists (not at limit)."""
+    crawler = ConsoleCrawler()
+    mock_consoles = [
+        {"id": 77, "name": "bash", "console_url": "https://www.pythonanywhere.com/user/testuser/consoles/77/"},
+    ]
+
+    with patch.object(crawler, "list", return_value=mock_consoles), \
+         patch.object(crawler, "delete") as mock_delete, \
+         patch.object(crawler, "create") as mock_create:
+        result = crawler.get_or_create("testuser")
+
+    assert result == 77
+    mock_delete.assert_not_called()
+    mock_create.assert_not_called()

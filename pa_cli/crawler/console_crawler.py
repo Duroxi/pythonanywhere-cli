@@ -89,6 +89,19 @@ class ConsoleCrawler:
         except requests.RequestException as e:
             raise Exception(f"Failed to delete console: {e}") from e
 
+    def get_or_create(self, username: str, executable: str = "bash") -> int:
+        consoles = self.list(username)
+
+        if len(consoles) >= 2:
+            self.delete(username, consoles[0]["id"])
+            consoles = []
+
+        if consoles:
+            return consoles[0]["id"]
+
+        new_console = self.create(username, executable=executable)
+        return new_console["id"]
+
     def activate(self, username: str, console_id: int) -> None:
         frame_url = f"{self.base_url}/user/{username}/consoles/{console_id}/frame/"
 

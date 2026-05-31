@@ -2,6 +2,14 @@ from pa_cli.api.client import BaseClient
 
 
 class ConsolesClient(BaseClient):
+    def list(self, username: str) -> list:
+        response = self._request(
+            "GET",
+            "/api/v0/user/{username}/consoles/",
+            username=username,
+        )
+        return response.json()
+
     def create(self, username: str, executable: str = "bash") -> dict:
         response = self._request(
             "POST",
