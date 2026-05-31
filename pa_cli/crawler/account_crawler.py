@@ -34,8 +34,13 @@ class AccountCrawler:
             "recaptcha_response_token_v3": "",
         }
 
+        headers = {
+            "Referer": register_url,
+            "Origin": self.base_url,
+        }
+
         try:
-            register_resp = self.session.post(register_url, data=data)
+            register_resp = self.session.post(register_url, data=data, headers=headers)
             register_resp.raise_for_status()
         except requests.RequestException as e:
             raise Exception(f"Registration request failed: {e}") from e
