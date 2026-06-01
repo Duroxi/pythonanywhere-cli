@@ -95,9 +95,10 @@ class AccountCrawler:
             extend_url = f"{self.base_url}{extend_url}"
 
         data = {"csrfmiddlewaretoken": csrf_input["value"]}
+        headers = {"Referer": webapps_url}
 
         try:
-            extend_resp = self.session.post(extend_url, data=data)
+            extend_resp = self.session.post(extend_url, data=data, headers=headers)
         except requests.RequestException as e:
             raise Exception(f"Extend request failed: {e}") from e
 

@@ -34,8 +34,13 @@ class ConsoleCrawler:
             "login_view-current_step": "auth",
         }
 
+        headers = {
+            "Referer": login_url,
+            "Origin": self.base_url,
+        }
+
         try:
-            login_resp = self.session.post(login_url, data=data)
+            login_resp = self.session.post(login_url, data=data, headers=headers)
             login_resp.raise_for_status()
         except requests.RequestException as e:
             raise Exception(f"Login request failed: {e}") from e
