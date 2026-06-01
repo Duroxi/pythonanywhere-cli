@@ -5,6 +5,16 @@ import requests
 from pa_cli.crawler.account_crawler import AccountCrawler
 
 
+MOCK_CONFIG = {"username": "configuser", "token": "cfg-token-1234567890abcdef1234567890", "host": "www.pythonanywhere.com", "password": "configpass"}
+
+
+@pytest.fixture(autouse=True)
+def mock_config_load():
+    """Patch Config.load for all tests so AccountCrawler() doesn't hit real config."""
+    with patch("pa_cli.crawler.account_crawler.Config.load", return_value=MOCK_CONFIG):
+        yield
+
+
 REGISTER_PAGE_HTML = '<html><body><form><input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token"></form></body></html>'
 
 
@@ -386,7 +396,7 @@ def test_reload_webapp_returns_true_on_success():
     with patch.object(crawler.session, "cookies", mock_cookies), \
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()), \
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")):
-        result = crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+        result = crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
     assert result is True
 
@@ -400,7 +410,7 @@ def test_reload_webapp_gets_webapps_page():
     with patch.object(crawler.session, "cookies", mock_cookies), \
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()) as mock_get, \
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")):
-        crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+        crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
     mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/webapps/")
 
@@ -414,7 +424,7 @@ def test_reload_webapp_posts_with_correct_headers():
     with patch.object(crawler.session, "cookies", mock_cookies), \
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()), \
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")) as mock_post:
-        crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+        crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
     mock_post.assert_called_once()
     call_args = mock_post.call_args
@@ -435,7 +445,7 @@ def test_reload_webapp_uses_custom_host():
     with patch.object(crawler.session, "cookies", mock_cookies), \
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()) as mock_get, \
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")) as mock_post:
-        crawler.reload_webapp("testuser", "testuser.eu.pythonanywhere.com")
+        crawler.reload_webapp("testuser.eu.pythonanywhere.com", "testuser")
 
     assert "eu.pythonanywhere.com" in mock_get.call_args[0][0]
     assert "eu.pythonanywhere.com" in mock_post.call_args[0][0]
@@ -453,7 +463,7 @@ def test_reload_webapp_returns_false_on_non_ok_response():
     with patch.object(crawler.session, "cookies", mock_cookies), \
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()), \
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("ERROR", status_code=500)):
-        result = crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+        result = crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
     assert result is False
 
@@ -464,7 +474,7 @@ def test_reload_webapp_raises_on_get_network_error():
 
     with patch.object(crawler.session, "get", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Failed to fetch webapps page"):
-            crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+            crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
 
 def test_reload_webapp_raises_on_missing_csrf_token():
@@ -476,7 +486,7 @@ def test_reload_webapp_raises_on_missing_csrf_token():
     with patch.object(crawler.session, "cookies", mock_cookies), \
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()):
         with pytest.raises(Exception, match="CSRF token not found"):
-            crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+            crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
 
 def test_reload_webapp_raises_on_post_network_error():
@@ -489,7 +499,7 @@ def test_reload_webapp_raises_on_post_network_error():
          patch.object(crawler.session, "get", return_value=_mock_reload_get_response()), \
          patch.object(crawler.session, "post", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Reload request failed"):
-            crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+            crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
 
 # --- get_hits success tests ---
@@ -518,7 +528,7 @@ def test_get_hits_returns_dict_on_success():
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)):
-        result = crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+        result = crawler.get_hits("testuser.pythonanywhere.com", "testuser")
 
     assert isinstance(result, dict)
     assert result == HITS_RESPONSE_JSON
@@ -529,7 +539,7 @@ def test_get_hits_sends_correct_url():
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)) as mock_get:
-        crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+        crawler.get_hits("testuser.pythonanywhere.com", "testuser")
 
     mock_get.assert_called_once_with(
         "https://www.pythonanywhere.com/user/testuser/webapps/testuser.pythonanywhere.com/hits_summary/",
@@ -545,7 +555,7 @@ def test_get_hits_uses_custom_host():
     crawler = AccountCrawler(host="eu.pythonanywhere.com")
 
     with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)) as mock_get:
-        crawler.get_hits("testuser", "testuser.eu.pythonanywhere.com")
+        crawler.get_hits("testuser.eu.pythonanywhere.com", "testuser")
 
     call_args = mock_get.call_args
     assert "eu.pythonanywhere.com" in call_args[0][0]
@@ -557,7 +567,7 @@ def test_get_hits_returns_all_hit_fields():
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)):
-        result = crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+        result = crawler.get_hits("testuser.pythonanywhere.com", "testuser")
 
     assert "hits_current_hour" in result
     assert "hits_previous_hour" in result
@@ -576,7 +586,7 @@ def test_get_hits_raises_on_network_error():
 
     with patch.object(crawler.session, "get", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Failed to fetch hits"):
-            crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+            crawler.get_hits("testuser.pythonanywhere.com", "testuser")
 
 
 def test_get_hits_raises_on_http_error():
@@ -588,4 +598,261 @@ def test_get_hits_raises_on_http_error():
 
     with patch.object(crawler.session, "get", return_value=mock_resp):
         with pytest.raises(Exception, match="Failed to fetch hits"):
-            crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+            crawler.get_hits("testuser.pythonanywhere.com", "testuser")
+
+
+# --- constructor config integration tests ---
+
+
+def test_init_reads_username_from_config():
+    """AccountCrawler reads username from Config when no username parameter given."""
+    crawler = AccountCrawler()
+    assert crawler.username == "configuser"
+
+
+def test_init_explicit_username_overrides_config():
+    """Explicit username parameter overrides config value."""
+    crawler = AccountCrawler(username="explicituser")
+    assert crawler.username == "explicituser"
+
+
+def test_init_raises_when_no_config_and_no_username():
+    """AccountCrawler raises when config not found and no username given."""
+    # Override the autouse fixture for this test
+    with patch("pa_cli.crawler.account_crawler.Config.load", side_effect=FileNotFoundError("Config not found. Run 'pa init' first.")):
+        with pytest.raises(FileNotFoundError, match="Config not found"):
+            AccountCrawler()
+
+
+def test_init_uses_host_from_config():
+    """AccountCrawler reads host from Config when not explicitly provided."""
+    crawler = AccountCrawler()
+    assert crawler.base_url == "https://www.pythonanywhere.com"
+
+
+def test_init_explicit_host_overrides_config():
+    """Explicit host parameter overrides config value."""
+    crawler = AccountCrawler(host="eu.pythonanywhere.com")
+    assert crawler.base_url == "https://eu.pythonanywhere.com"
+
+
+# --- login method tests ---
+
+
+LOGIN_PAGE_HTML = '<html><body><form><input type="hidden" name="csrfmiddlewaretoken" value="login-csrf-token"></form></body></html>'
+
+
+def test_login_reads_password_from_config():
+    """login reads password from Config when no password parameter given."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(LOGIN_PAGE_HTML)), \
+         patch.object(crawler.session, "post", return_value=_mock_post_response(
+             "https://www.pythonanywhere.com/user/configuser/"
+         )):
+        result = crawler.login()
+
+    assert result is True
+
+
+def test_login_uses_explicit_password():
+    """login uses explicit password parameter over config value."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(LOGIN_PAGE_HTML)), \
+         patch.object(crawler.session, "post", return_value=_mock_post_response(
+             "https://www.pythonanywhere.com/user/configuser/"
+         )) as mock_post:
+        result = crawler.login(password="explicitpass")
+
+    assert result is True
+    posted_data = mock_post.call_args[1]["data"]
+    assert posted_data["auth-password"] == "explicitpass"
+
+
+def test_login_raises_when_no_password_in_config():
+    """login raises ValueError when config has no password and no password param given."""
+    config_no_pw = {"username": "configuser", "token": "abc", "host": "www.pythonanywhere.com"}
+    with patch("pa_cli.crawler.account_crawler.Config.load", return_value=config_no_pw):
+        crawler = AccountCrawler()
+        with pytest.raises(ValueError, match="Password not found"):
+            crawler.login()
+
+
+def test_login_posts_to_login_url():
+    """login POSTs credentials to the correct login URL."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(LOGIN_PAGE_HTML)), \
+         patch.object(crawler.session, "post", return_value=_mock_post_response(
+             "https://www.pythonanywhere.com/user/configuser/"
+         )) as mock_post:
+        crawler.login()
+
+    mock_post.assert_called_once()
+    call_args = mock_post.call_args
+    assert call_args[0][0] == "https://www.pythonanywhere.com/login/"
+    posted_data = call_args[1]["data"]
+    assert posted_data["auth-username"] == "configuser"
+    assert posted_data["auth-password"] == "configpass"
+    assert posted_data["login_view-current_step"] == "auth"
+
+
+def test_login_returns_false_on_failure():
+    """login returns False when response stays on login page."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(LOGIN_PAGE_HTML)), \
+         patch.object(crawler.session, "post", return_value=_mock_post_response(
+             "https://www.pythonanywhere.com/login/", status_code=200
+         )):
+        result = crawler.login()
+
+    assert result is False
+
+
+def test_login_raises_on_get_network_error():
+    """login raises Exception when fetching login page fails."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", side_effect=requests.ConnectionError("timeout")):
+        with pytest.raises(Exception, match="Failed to fetch login page"):
+            crawler.login()
+
+
+def test_login_raises_on_post_network_error():
+    """login raises Exception when POST request fails."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(LOGIN_PAGE_HTML)), \
+         patch.object(crawler.session, "post", side_effect=requests.ConnectionError("timeout")):
+        with pytest.raises(Exception, match="Login request failed"):
+            crawler.login()
+
+
+def test_login_raises_on_missing_csrf():
+    """login raises Exception when CSRF token not found on login page."""
+    crawler = AccountCrawler()
+
+    html_no_csrf = '<html><body><form></form></body></html>'
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(html_no_csrf)):
+        with pytest.raises(Exception, match="CSRF token not found"):
+            crawler.login()
+
+
+# --- get_token with config-based username ---
+
+
+def test_get_token_uses_self_username_when_no_param():
+    """get_token uses self.username when no username parameter given."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(ACCOUNT_PAGE_HTML)) as mock_get:
+        token = crawler.get_token()
+
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/account/")
+    assert token == "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+
+
+def test_get_token_explicit_username_overrides_self():
+    """get_token uses explicit username parameter over self.username."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(ACCOUNT_PAGE_HTML)) as mock_get:
+        crawler.get_token("otheruser")
+
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/account/")
+
+
+# --- extend_expiry with config-based username ---
+
+
+def test_extend_expiry_uses_self_username_when_no_param():
+    """extend_expiry uses self.username when no username parameter given."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)), \
+         patch.object(crawler.session, "post", return_value=_mock_post_response(
+             "https://www.pythonanywhere.com/user/configuser/webapps/", status_code=200
+         )):
+        result = crawler.extend_expiry()
+
+    assert result is True
+
+
+def test_extend_expiry_explicit_username_overrides_self():
+    """extend_expiry uses explicit username parameter over self.username."""
+    crawler = AccountCrawler()
+
+    other_html = '''<html><body>
+    <form action="/user/otheruser/webapps/otheruser.pythonanywhere.com/extend" method="post">
+        <input type="hidden" name="csrfmiddlewaretoken" value="extend-csrf">
+        <button type="submit">Extend</button>
+    </form>
+    </body></html>'''
+
+    with patch.object(crawler.session, "get", return_value=_mock_get_response(other_html)) as mock_get, \
+         patch.object(crawler.session, "post", return_value=_mock_post_response(
+             "https://www.pythonanywhere.com/user/otheruser/webapps/", status_code=200
+         )):
+        crawler.extend_expiry("otheruser")
+
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/webapps/")
+
+
+# --- reload_webapp with config-based username ---
+
+
+def test_reload_webapp_uses_self_username_when_no_param():
+    """reload_webapp uses self.username when no username parameter given."""
+    crawler = AccountCrawler()
+
+    mock_cookies = MagicMock()
+    mock_cookies.get.return_value = "reload-csrf-token"
+
+    with patch.object(crawler.session, "cookies", mock_cookies), \
+         patch.object(crawler.session, "get", return_value=_mock_reload_get_response()), \
+         patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")) as mock_post:
+        result = crawler.reload_webapp("configuser.pythonanywhere.com")
+
+    assert result is True
+    assert "configuser" in mock_post.call_args[0][0]
+
+
+def test_reload_webapp_explicit_username_overrides_self():
+    """reload_webapp uses explicit username parameter over self.username."""
+    crawler = AccountCrawler()
+
+    mock_cookies = MagicMock()
+    mock_cookies.get.return_value = "reload-csrf-token"
+
+    with patch.object(crawler.session, "cookies", mock_cookies), \
+         patch.object(crawler.session, "get", return_value=_mock_reload_get_response()) as mock_get, \
+         patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")):
+        crawler.reload_webapp("otheruser.pythonanywhere.com", "otheruser")
+
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/webapps/")
+
+
+# --- get_hits with config-based username ---
+
+
+def test_get_hits_uses_self_username_when_no_param():
+    """get_hits uses self.username when no username parameter given."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)) as mock_get:
+        result = crawler.get_hits("configuser.pythonanywhere.com")
+
+    assert result == HITS_RESPONSE_JSON
+    assert "configuser" in mock_get.call_args[0][0]
+
+
+def test_get_hits_explicit_username_overrides_self():
+    """get_hits uses explicit username parameter over self.username."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)) as mock_get:
+        crawler.get_hits("otheruser.pythonanywhere.com", "otheruser")
+
+    assert "otheruser" in mock_get.call_args[0][0]

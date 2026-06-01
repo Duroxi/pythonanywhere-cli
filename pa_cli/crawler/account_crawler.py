@@ -1,10 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 
+from pa_cli.config import Config
+
 
 class AccountCrawler:
-    def __init__(self, host: str = "www.pythonanywhere.com"):
-        self.base_url = f"https://{host}"
+    def __init__(self, username: str | None = None, host: str | None = None):
+        config = Config.load()
+        self.username = username or config["username"]
+        resolved_host = host or config.get("host", "www.pythonanywhere.com")
+        self.base_url = f"https://{resolved_host}"
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -47,8 +52,51 @@ class AccountCrawler:
 
         return "/registration/register/complete/" in register_resp.url
 
-    def get_token(self, username: str) -> str:
-        account_url = f"{self.base_url}/user/{username}/account/"
+    def login(self, password: str | None = None) -> bool:
+        if password is None:
+            config = Config.load()
+            password = config.get("password")
+            if not password:
+                raise ValueError(
+                    "Password not found in config. Run 'pa account login' to store it."
+                )
+
+        login_url = f"{self.base_url}/login/"
+
+        try:
+            login_page_resp = self.session.get(login_url)
+            login_page_resp.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to fetch login page: {e}") from e
+
+        soup = BeautifulSoup(login_page_resp.text, "html.parser")
+        csrf_input = soup.find("input", {"name": "csrfmiddlewaretoken"})
+        if csrf_input is None:
+            raise Exception("CSRF token not found on login page")
+
+        data = {
+            "csrfmiddlewaretoken": csrf_input["value"],
+            "auth-username": self.username,
+            "auth-password": password,
+            "login_view-current_step": "auth",
+        }
+
+        headers = {
+            "Referer": login_url,
+            "Origin": self.base_url,
+        }
+
+        try:
+            login_resp = self.session.post(login_url, data=data, headers=headers)
+            login_resp.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Login request failed: {e}") from e
+
+        return "/login/" not in login_resp.url
+
+    def get_token(self, username: str | None = None) -> str:
+        resolved = username or self.username
+        account_url = f"{self.base_url}/user/{resolved}/account/"
 
         try:
             resp = self.session.get(account_url)
@@ -66,8 +114,9 @@ class AccountCrawler:
 
         raise Exception("API token not found on account page")
 
-    def extend_expiry(self, username: str) -> bool:
-        webapps_url = f"{self.base_url}/user/{username}/webapps/"
+    def extend_expiry(self, username: str | None = None) -> bool:
+        resolved = username or self.username
+        webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
             resp = self.session.get(webapps_url)
@@ -104,8 +153,9 @@ class AccountCrawler:
 
         return extend_resp.status_code in (200, 302)
 
-    def reload_webapp(self, username: str, domain: str) -> bool:
-        webapps_url = f"{self.base_url}/user/{username}/webapps/"
+    def reload_webapp(self, domain: str, username: str | None = None) -> bool:
+        resolved = username or self.username
+        webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
             resp = self.session.get(webapps_url)
@@ -117,7 +167,7 @@ class AccountCrawler:
         if csrf_token is None:
             raise Exception("CSRF token not found in cookies")
 
-        reload_url = f"{self.base_url}/user/{username}/webapps/{domain}/reload"
+        reload_url = f"{self.base_url}/user/{resolved}/webapps/{domain}/reload"
         headers = {
             "X-CSRFToken": csrf_token,
             "X-Requested-With": "XMLHttpRequest",
@@ -132,9 +182,10 @@ class AccountCrawler:
 
         return reload_resp.text == "OK"
 
-    def get_hits(self, username: str, domain: str) -> dict:
-        hits_url = f"{self.base_url}/user/{username}/webapps/{domain}/hits_summary/"
-        webapps_url = f"{self.base_url}/user/{username}/webapps/"
+    def get_hits(self, domain: str, username: str | None = None) -> dict:
+        resolved = username or self.username
+        hits_url = f"{self.base_url}/user/{resolved}/webapps/{domain}/hits_summary/"
+        webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
         headers = {
             "X-Requested-With": "XMLHttpRequest",
             "Referer": webapps_url,
