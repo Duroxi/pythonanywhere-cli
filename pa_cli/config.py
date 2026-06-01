@@ -6,24 +6,55 @@ CONFIG_PATH = Path.home() / ".pa-cli" / "config.json"
 
 class Config:
     @staticmethod
-    def save(username: str, token: str, host: str = "www.pythonanywhere.com") -> None:
+    def save(
+        username: str | None = None,
+        token: str | None = None,
+        host: str | None = None,
+        password: str | None = None,
+    ) -> None:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         if CONFIG_PATH.exists():
             data = json.loads(CONFIG_PATH.read_text())
         else:
-            data = {"accounts": [], "default_account": username}
+            data = {"accounts": [], "default_account": username or ""}
 
-        account = {"username": username, "token": token, "host": host}
+        # If partial update (e.g. only password), load existing account
+        existing_account = None
+        target_username = username or data.get("default_account", "")
+        if target_username:
+            for a in data.get("accounts", []):
+                if a["username"] == target_username:
+                    existing_account = a
+                    break
+
+        if existing_account:
+            account = dict(existing_account)
+            if username is not None:
+                account["username"] = username
+            if token is not None:
+                account["token"] = token
+            if host is not None:
+                account["host"] = host
+            if password is not None:
+                account["password"] = password
+        else:
+            account = {
+                "username": target_username,
+                "token": token or "",
+                "host": host or "www.pythonanywhere.com",
+            }
+            if password is not None:
+                account["password"] = password
 
         # Update existing or append new
-        existing = [i for i, a in enumerate(data["accounts"]) if a["username"] == username]
+        existing = [i for i, a in enumerate(data["accounts"]) if a["username"] == target_username]
         if existing:
             data["accounts"][existing[0]] = account
         else:
             data["accounts"].append(account)
 
-        data["default_account"] = username
+        data["default_account"] = target_username
         CONFIG_PATH.write_text(json.dumps(data, indent=2))
 
     @staticmethod

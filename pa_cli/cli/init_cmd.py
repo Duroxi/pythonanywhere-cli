@@ -11,6 +11,11 @@ def init():
     username = typer.prompt("PythonAnywhere username")
     token = typer.prompt("API Token", hide_input=True)
     host = typer.prompt("Host", default="www.pythonanywhere.com")
+    password = typer.prompt("Password (optional, press Enter to skip)", default="", hide_input=True)
 
-    Config.save(username=username, token=token, host=host)
+    save_kwargs = dict(username=username, token=token, host=host)
+    if password:
+        save_kwargs["password"] = password
+
+    Config.save(**save_kwargs)
     typer.echo(f"Account '{username}' configured successfully.")
