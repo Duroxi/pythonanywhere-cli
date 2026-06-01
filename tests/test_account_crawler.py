@@ -490,3 +490,102 @@ def test_reload_webapp_raises_on_post_network_error():
          patch.object(crawler.session, "post", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Reload request failed"):
             crawler.reload_webapp("testuser", "testuser.pythonanywhere.com")
+
+
+# --- get_hits success tests ---
+
+HITS_RESPONSE_JSON = {
+    "hits_current_hour": 0,
+    "hits_previous_hour": 2,
+    "hits_current_day": 2,
+    "hits_previous_day": 0,
+    "hits_current_month": 2,
+    "hits_previous_month": 0,
+}
+
+
+def _mock_json_response(json_data, status_code=200):
+    """Response for JSON API requests."""
+    resp = MagicMock()
+    resp.json.return_value = json_data
+    resp.raise_for_status = MagicMock()
+    type(resp).status_code = PropertyMock(return_value=status_code)
+    return resp
+
+
+def test_get_hits_returns_dict_on_success():
+    """get_hits returns dict with hit counts when request succeeds."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)):
+        result = crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+
+    assert isinstance(result, dict)
+    assert result == HITS_RESPONSE_JSON
+
+
+def test_get_hits_sends_correct_url():
+    """get_hits GETs the correct hits_summary endpoint."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)) as mock_get:
+        crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+
+    mock_get.assert_called_once_with(
+        "https://www.pythonanywhere.com/user/testuser/webapps/testuser.pythonanywhere.com/hits_summary/",
+        headers={
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://www.pythonanywhere.com/user/testuser/webapps/",
+        },
+    )
+
+
+def test_get_hits_uses_custom_host():
+    """get_hits uses the correct base_url for custom host."""
+    crawler = AccountCrawler(host="eu.pythonanywhere.com")
+
+    with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)) as mock_get:
+        crawler.get_hits("testuser", "testuser.eu.pythonanywhere.com")
+
+    call_args = mock_get.call_args
+    assert "eu.pythonanywhere.com" in call_args[0][0]
+    assert "eu.pythonanywhere.com" in call_args[1]["headers"]["Referer"]
+
+
+def test_get_hits_returns_all_hit_fields():
+    """get_hits returns dict containing all expected hit count fields."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", return_value=_mock_json_response(HITS_RESPONSE_JSON)):
+        result = crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+
+    assert "hits_current_hour" in result
+    assert "hits_previous_hour" in result
+    assert "hits_current_day" in result
+    assert "hits_previous_day" in result
+    assert "hits_current_month" in result
+    assert "hits_previous_month" in result
+
+
+# --- get_hits error handling tests ---
+
+
+def test_get_hits_raises_on_network_error():
+    """get_hits raises Exception when network request fails."""
+    crawler = AccountCrawler()
+
+    with patch.object(crawler.session, "get", side_effect=requests.ConnectionError("timeout")):
+        with pytest.raises(Exception, match="Failed to fetch hits"):
+            crawler.get_hits("testuser", "testuser.pythonanywhere.com")
+
+
+def test_get_hits_raises_on_http_error():
+    """get_hits raises Exception when HTTP response indicates error."""
+    crawler = AccountCrawler()
+
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+
+    with patch.object(crawler.session, "get", return_value=mock_resp):
+        with pytest.raises(Exception, match="Failed to fetch hits"):
+            crawler.get_hits("testuser", "testuser.pythonanywhere.com")

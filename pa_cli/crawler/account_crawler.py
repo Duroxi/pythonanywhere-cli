@@ -131,3 +131,19 @@ class AccountCrawler:
             raise Exception(f"Reload request failed: {e}") from e
 
         return reload_resp.text == "OK"
+
+    def get_hits(self, username: str, domain: str) -> dict:
+        hits_url = f"{self.base_url}/user/{username}/webapps/{domain}/hits_summary/"
+        webapps_url = f"{self.base_url}/user/{username}/webapps/"
+        headers = {
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": webapps_url,
+        }
+
+        try:
+            resp = self.session.get(hits_url, headers=headers)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to fetch hits: {e}") from e
+
+        return resp.json()
