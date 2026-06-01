@@ -238,121 +238,121 @@ def test_get_token_raises_when_token_not_found():
             crawler.get_token("testuser")
 
 
-# --- refresh success tests ---
+# --- extend_expiry success tests ---
 
 WEBAPPS_PAGE_HTML = '''<html><body>
 <form action="/user/testuser/webapps/testuser.pythonanywhere.com/extend" method="post">
-    <input type="hidden" name="csrfmiddlewaretoken" value="refresh-csrf-token">
+    <input type="hidden" name="csrfmiddlewaretoken" value="extend_expiry-csrf-token">
     <button type="submit">Extend</button>
 </form>
 </body></html>'''
 
 
-def test_refresh_returns_true_on_success():
-    """refresh returns True when POST to extend URL succeeds."""
+def test_extend_expiry_returns_true_on_success():
+    """extend_expiry returns True when POST to extend URL succeeds."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)), \
          patch.object(crawler.session, "post", return_value=_mock_post_response(
              "https://www.pythonanywhere.com/user/testuser/webapps/", status_code=200
          )):
-        result = crawler.refresh("testuser")
+        result = crawler.extend_expiry("testuser")
 
     assert result is True
 
 
-def test_refresh_returns_true_on_redirect():
-    """refresh returns True when POST returns 302 redirect."""
+def test_extend_expiry_returns_true_on_redirect():
+    """extend_expiry returns True when POST returns 302 redirect."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)), \
          patch.object(crawler.session, "post", return_value=_mock_post_response(
              "https://www.pythonanywhere.com/user/testuser/webapps/", status_code=302
          )):
-        result = crawler.refresh("testuser")
+        result = crawler.extend_expiry("testuser")
 
     assert result is True
 
 
-def test_refresh_fetches_webapps_page():
-    """refresh GETs the correct webapps page URL."""
+def test_extend_expiry_fetches_webapps_page():
+    """extend_expiry GETs the correct webapps page URL."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)) as mock_get, \
          patch.object(crawler.session, "post", return_value=_mock_post_response(
              "https://www.pythonanywhere.com/user/testuser/webapps/", status_code=200
          )):
-        crawler.refresh("testuser")
+        crawler.extend_expiry("testuser")
 
     mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/webapps/")
 
 
-def test_refresh_posts_csrf_to_extend_url():
-    """refresh POSTs csrfmiddlewaretoken to the extend URL found in form action."""
+def test_extend_expiry_posts_csrf_to_extend_url():
+    """extend_expiry POSTs csrfmiddlewaretoken to the extend URL found in form action."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)), \
          patch.object(crawler.session, "post", return_value=_mock_post_response(
              "https://www.pythonanywhere.com/user/testuser/webapps/", status_code=200
          )) as mock_post:
-        crawler.refresh("testuser")
+        crawler.extend_expiry("testuser")
 
     mock_post.assert_called_once()
     call_args = mock_post.call_args
     assert "extend" in call_args[0][0]
-    assert call_args[1]["data"]["csrfmiddlewaretoken"] == "refresh-csrf-token"
+    assert call_args[1]["data"]["csrfmiddlewaretoken"] == "extend_expiry-csrf-token"
 
 
-# --- refresh failure tests ---
+# --- extend_expiry failure tests ---
 
 
-def test_refresh_returns_false_on_failure():
-    """refresh returns False when POST returns non-success status."""
+def test_extend_expiry_returns_false_on_failure():
+    """extend_expiry returns False when POST returns non-success status."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)), \
          patch.object(crawler.session, "post", return_value=_mock_post_response(
              "https://www.pythonanywhere.com/user/testuser/webapps/", status_code=500
          )):
-        result = crawler.refresh("testuser")
+        result = crawler.extend_expiry("testuser")
 
     assert result is False
 
 
-def test_refresh_raises_on_get_network_error():
-    """refresh raises Exception when fetching webapps page fails."""
+def test_extend_expiry_raises_on_get_network_error():
+    """extend_expiry raises Exception when fetching webapps page fails."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Failed to fetch webapps page"):
-            crawler.refresh("testuser")
+            crawler.extend_expiry("testuser")
 
 
-def test_refresh_raises_when_no_extend_form():
-    """refresh raises Exception when no extend form is found on page."""
+def test_extend_expiry_raises_when_no_extend_form():
+    """extend_expiry raises Exception when no extend form is found on page."""
     crawler = AccountCrawler()
     html_without_form = '<html><body><form action="/other"></form></body></html>'
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(html_without_form)):
         with pytest.raises(Exception, match="Extend form not found"):
-            crawler.refresh("testuser")
+            crawler.extend_expiry("testuser")
 
 
-def test_refresh_raises_when_no_csrf_in_form():
-    """refresh raises Exception when CSRF token is not in the extend form."""
+def test_extend_expiry_raises_when_no_csrf_in_form():
+    """extend_expiry raises Exception when CSRF token is not in the extend form."""
     crawler = AccountCrawler()
     html_no_csrf = '<html><body><form action="/user/testuser/webapps/test.pythonanywhere.com/extend"></form></body></html>'
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(html_no_csrf)):
         with pytest.raises(Exception, match="CSRF token not found"):
-            crawler.refresh("testuser")
+            crawler.extend_expiry("testuser")
 
 
-def test_refresh_raises_on_post_network_error():
-    """refresh raises Exception when POST request fails."""
+def test_extend_expiry_raises_on_post_network_error():
+    """extend_expiry raises Exception when POST request fails."""
     crawler = AccountCrawler()
 
     with patch.object(crawler.session, "get", return_value=_mock_get_response(WEBAPPS_PAGE_HTML)), \
          patch.object(crawler.session, "post", side_effect=requests.ConnectionError("timeout")):
         with pytest.raises(Exception, match="Extend request failed"):
-            crawler.refresh("testuser")
+            crawler.extend_expiry("testuser")

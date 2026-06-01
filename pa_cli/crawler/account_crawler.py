@@ -66,7 +66,7 @@ class AccountCrawler:
 
         raise Exception("API token not found on account page")
 
-    def refresh(self, username: str) -> bool:
+    def extend_expiry(self, username: str) -> bool:
         webapps_url = f"{self.base_url}/user/{username}/webapps/"
 
         try:
