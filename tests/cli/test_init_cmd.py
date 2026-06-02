@@ -53,8 +53,8 @@ def test_init_shows_success_message_with_token(tmp_path):
     assert "token" in result.output.lower()
 
 
-def test_init_login_failure_suggests_register(tmp_path):
-    """init shows error and suggests pa register when login fails."""
+def test_init_login_failure_shows_error(tmp_path):
+    """init shows error when login fails."""
     with patch("pa_cli.cli.init_cmd.Config.save"), \
          patch("pa_cli.cli.init_cmd.AccountCrawler") as MockCrawler:
         mock_crawler = MockCrawler.return_value
@@ -63,11 +63,12 @@ def test_init_login_failure_suggests_register(tmp_path):
         result = runner.invoke(app, input="testuser\nsecret123\n\n")
 
     assert result.exit_code == 1
-    assert "pa register" in result.output
+    assert "Login failed" in result.output
+    assert "check your username and password" in result.output
 
 
-def test_init_login_exception_suggests_register(tmp_path):
-    """init shows error and suggests pa register when login raises exception."""
+def test_init_login_exception_shows_error(tmp_path):
+    """init shows error when login raises exception."""
     with patch("pa_cli.cli.init_cmd.Config.save"), \
          patch("pa_cli.cli.init_cmd.AccountCrawler") as MockCrawler:
         mock_crawler = MockCrawler.return_value
@@ -76,7 +77,7 @@ def test_init_login_exception_suggests_register(tmp_path):
         result = runner.invoke(app, input="testuser\nsecret123\n\n")
 
     assert result.exit_code == 1
-    assert "pa register" in result.output
+    assert "Network error" in result.output
 
 
 def test_init_saves_config_before_login(tmp_path):

@@ -25,10 +25,8 @@ def init():
             typer.echo(f"Account '{username}' configured successfully.")
             typer.echo("API token fetched and saved.")
         else:
-            typer.echo("Login failed. Check your credentials.", err=True)
-            typer.echo("You can register a new account with: pa register", err=True)
+            typer.echo("Login failed. Please check your username and password.", err=True)
             raise typer.Exit(code=1)
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
-        typer.echo("You can register a new account with: pa register", err=True)
         raise typer.Exit(code=1)
