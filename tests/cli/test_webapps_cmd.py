@@ -61,3 +61,132 @@ def test_webapp_reload():
         result = runner.invoke(app, ["reload", "u.pythonanywhere.com"])
 
     assert result.exit_code == 0
+
+
+# --- hits command tests ---
+
+
+def test_hits_command_logs_in_and_gets_hits():
+    """hits command creates crawler, logs in, and displays hit statistics."""
+    hits_data = {
+        "hits_current_hour": 5,
+        "hits_previous_hour": 10,
+        "hits_current_day": 100,
+        "hits_previous_day": 200,
+        "hits_current_month": 3000,
+        "hits_previous_month": 4000,
+    }
+
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.return_value = True
+        mock_crawler.get_hits.return_value = hits_data
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["hits", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 0
+    mock_crawler.login.assert_called_once()
+    mock_crawler.get_hits.assert_called_once_with("u.pythonanywhere.com")
+    assert "5" in result.output
+    assert "100" in result.output
+    assert "3000" in result.output
+
+
+def test_hits_command_exits_on_login_failure():
+    """hits command exits with error when login returns False."""
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.return_value = False
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["hits", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 1
+    assert "Login failed" in result.output
+
+
+def test_hits_command_exits_on_login_exception():
+    """hits command exits with error when login raises exception."""
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.side_effect = ValueError("Password not found")
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["hits", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 1
+    assert "Password not found" in result.output
+
+
+# --- reload-crawler command tests ---
+
+
+def test_reload_crawler_command_logs_in_and_reloads():
+    """reload-crawler command creates crawler, logs in, and reloads web app."""
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.return_value = True
+        mock_crawler.reload_webapp.return_value = True
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["reload-crawler", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 0
+    mock_crawler.login.assert_called_once()
+    mock_crawler.reload_webapp.assert_called_once_with("u.pythonanywhere.com")
+    assert "reloaded" in result.output.lower()
+
+
+def test_reload_crawler_command_exits_on_login_failure():
+    """reload-crawler command exits with error when login returns False."""
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.return_value = False
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["reload-crawler", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 1
+    assert "Login failed" in result.output
+
+
+def test_reload_crawler_command_exits_on_reload_failure():
+    """reload-crawler command exits with error when reload_webapp returns False."""
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.return_value = True
+        mock_crawler.reload_webapp.return_value = False
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["reload-crawler", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 1
+    assert "Failed to reload" in result.output
+
+
+def test_reload_crawler_command_exits_on_login_exception():
+    """reload-crawler command exits with error when login raises exception."""
+    with patch("pa_cli.cli.webapps_cmd.Config.load") as mock_load, \
+         patch("pa_cli.cli.webapps_cmd.AccountCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.side_effect = ValueError("Password not found")
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["reload-crawler", "u.pythonanywhere.com"])
+
+    assert result.exit_code == 1
+    assert "Password not found" in result.output

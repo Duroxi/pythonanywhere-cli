@@ -2,6 +2,7 @@ import typer
 
 from pa_cli.api.webapps import WebappsClient
 from pa_cli.config import Config
+from pa_cli.crawler.account_crawler import AccountCrawler
 
 app = typer.Typer(help="Manage web apps on PythonAnywhere.")
 
@@ -58,3 +59,44 @@ def reload(
     account, client = _get_client()
     client.reload(account["username"], domain_name)
     typer.echo(f"Webapp {domain_name} reloaded.")
+
+
+@app.command("hits")
+def hits(
+    domain_name: str = typer.Argument(..., help="Domain name"),
+):
+    """Get web app hit statistics via crawler."""
+    try:
+        account = Config.load()
+        crawler = AccountCrawler()
+        if not crawler.login():
+            typer.echo("Login failed. Check your credentials.", err=True)
+            raise typer.Exit(code=1)
+        data = crawler.get_hits(domain_name)
+        typer.echo(f"Hit statistics for {domain_name}:")
+        for key, value in data.items():
+            typer.echo(f"  {key}: {value}")
+    except Exception as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("reload-crawler")
+def reload_crawler(
+    domain_name: str = typer.Argument(..., help="Domain name"),
+):
+    """Reload a web app via crawler (alternative to API reload)."""
+    try:
+        account = Config.load()
+        crawler = AccountCrawler()
+        if not crawler.login():
+            typer.echo("Login failed. Check your credentials.", err=True)
+            raise typer.Exit(code=1)
+        if crawler.reload_webapp(domain_name):
+            typer.echo(f"Webapp {domain_name} reloaded successfully.")
+        else:
+            typer.echo(f"Failed to reload webapp {domain_name}.", err=True)
+            raise typer.Exit(code=1)
+    except Exception as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
