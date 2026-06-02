@@ -103,20 +103,6 @@ def test_console_send():
     assert result.exit_code == 0
 
 
-def test_console_output():
-    with patch("pa_cli.cli.consoles_cmd.Config.load") as mock_load, \
-         patch("pa_cli.cli.consoles_cmd.ConsolesClient") as mock_cls:
-        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
-        mock_client = MagicMock()
-        mock_client.get_output.return_value = {"output": "file1.txt\n"}
-        mock_cls.return_value = mock_client
-
-        result = runner.invoke(app, ["output", "42"])
-
-    assert result.exit_code == 0
-    assert "file1.txt" in result.output
-
-
 def test_console_kill():
     with patch("pa_cli.cli.consoles_cmd.Config.load") as mock_load, \
          patch("pa_cli.cli.consoles_cmd.ConsolesClient") as mock_cls:
@@ -127,3 +113,58 @@ def test_console_kill():
         result = runner.invoke(app, ["kill", "42"])
 
     assert result.exit_code == 0
+
+
+def test_console_get_or_create_no_password():
+    with patch("pa_cli.cli.consoles_cmd.Config.load") as mock_load:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h"}
+
+        result = runner.invoke(app, ["get-or-create"])
+
+    assert result.exit_code == 1
+    assert "Password not found" in result.output
+
+
+def test_console_get_or_create_success():
+    with patch("pa_cli.cli.consoles_cmd.Config.load") as mock_load, \
+         patch("pa_cli.crawler.console_crawler.ConsoleCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h", "password": "p"}
+        mock_crawler = MagicMock()
+        mock_crawler.get_or_create.return_value = 42
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["get-or-create"])
+
+    assert result.exit_code == 0
+    assert "Console ready: 42" in result.output
+    mock_crawler.login.assert_called_once_with("u", "p")
+    mock_crawler.get_or_create.assert_called_once_with("u", executable="bash")
+
+
+def test_console_get_or_create_custom_executable():
+    with patch("pa_cli.cli.consoles_cmd.Config.load") as mock_load, \
+         patch("pa_cli.crawler.console_crawler.ConsoleCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h", "password": "p"}
+        mock_crawler = MagicMock()
+        mock_crawler.get_or_create.return_value = 7
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["get-or-create", "-e", "python3.10"])
+
+    assert result.exit_code == 0
+    assert "Console ready: 7" in result.output
+    mock_crawler.get_or_create.assert_called_once_with("u", executable="python3.10")
+
+
+def test_console_get_or_create_error():
+    with patch("pa_cli.cli.consoles_cmd.Config.load") as mock_load, \
+         patch("pa_cli.crawler.console_crawler.ConsoleCrawler") as mock_cls:
+        mock_load.return_value = {"username": "u", "token": "t", "host": "h", "password": "p"}
+        mock_crawler = MagicMock()
+        mock_crawler.login.side_effect = Exception("Login failed")
+        mock_cls.return_value = mock_crawler
+
+        result = runner.invoke(app, ["get-or-create"])
+
+    assert result.exit_code == 1
+    assert "Login failed" in result.output

@@ -61,21 +61,45 @@ def create(
 def send(
     console_id: int = typer.Argument(..., help="Console ID"),
     command: str = typer.Argument(..., help="Command to send"),
+    wait: bool = typer.Option(True, "--wait/--no-wait", "-w/-W", help="Wait for output"),
 ):
-    """Send input to a console."""
+    """Send input to a console and get output."""
+    import time
     account, client = _get_client()
     client.send_input(account["username"], console_id, command + "\n")
-    typer.echo(f"Sent to console {console_id}: {command}")
 
+    if not wait:
+        typer.echo(f"Sent to console {console_id}: {command}")
+        return
 
-@app.command()
-def output(
-    console_id: int = typer.Argument(..., help="Console ID"),
-):
-    """Get latest output from a console."""
-    account, client = _get_client()
+    # Wait for output
+    time.sleep(1)
     result = client.get_output(account["username"], console_id)
-    typer.echo(result.get("output", "(no output)"))
+    output = result.get("output", "(no output)")
+    typer.echo(output)
+
+
+@app.command("get-or-create")
+def get_or_create(
+    executable: str = typer.Option("bash", "--executable", "-e", help="Console executable"),
+):
+    """Get an existing console or create a new one (auto-manage lifecycle)."""
+    try:
+        from pa_cli.crawler.console_crawler import ConsoleCrawler
+
+        account = Config.load()
+
+        if "password" not in account:
+            typer.echo("Password not found. Run 'pa account login' first.", err=True)
+            raise typer.Exit(code=1)
+
+        crawler = ConsoleCrawler(host=account.get("host", "www.pythonanywhere.com"))
+        crawler.login(account["username"], account["password"])
+        console_id = crawler.get_or_create(account["username"], executable=executable)
+        typer.echo(f"Console ready: {console_id}")
+    except Exception as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
