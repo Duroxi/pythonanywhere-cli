@@ -1,6 +1,6 @@
 # pythonanywhere-cli
 
-CLI tool for automating PythonAnywhere deployments.
+CLI tool for automating PythonAnywhere deployments. **Local project → Live website, one step.**
 
 ## Installation
 
@@ -11,11 +11,11 @@ pip install -e .
 ## Quick Start
 
 ```bash
-# 1. Configure your account
-pa init
+# 1. Register a new account (if needed)
+pa register
 
-# 2. Store password for crawler operations (optional)
-pa account login
+# 2. Configure your account (auto-fetches API token)
+pa init
 
 # 3. Deploy a project
 pa deploy ./my-site
@@ -25,95 +25,76 @@ pa deploy ./my-site
 
 ### Account Management
 
-| Command | Description |
-|---------|-------------|
-| `pa init` | Configure API token and username (interactive) |
-| `pa account login` | Store password for crawler operations (interactive, hidden input) |
+| Command | Description | Auth |
+|---------|-------------|------|
+| `pa init` | Configure account (auto-fetches token) | - |
+| `pa register` | Register a new PythonAnywhere account | - |
+| `pa account login` | Store password for crawler operations | - |
+| `pa account token` | Fetch API token from account page | Password |
+| `pa account extend` | Extend free tier account expiry | Password |
 
 ### File Management
 
-| Command | Description |
-|---------|-------------|
-| `pa files upload <local> <remote>` | Upload a single file |
-| `pa files upload <local> <remote> -r` | Upload directory recursively |
+| Command | Description | Auth |
+|---------|-------------|------|
+| `pa files upload <local> <remote>` | Upload a single file | Token |
+| `pa files upload <local> <remote> -r` | Upload directory recursively | Token |
 
 ### Console Management
 
-| Command | Description |
-|---------|-------------|
-| `pa console create` | Create a Bash console |
-| `pa console send <id> <cmd>` | Send input to console |
-| `pa console output <id>` | Get console output |
-| `pa console kill <id>` | Kill a console |
+| Command | Description | Auth |
+|---------|-------------|------|
+| `pa console list` | List all consoles | Token |
+| `pa console create` | Create a new console | Token |
+| `pa console send <id> <cmd>` | Send command and get output | Token |
+| `pa console kill <id>` | Kill a console | Token |
+| `pa console activate <id>` | Activate console via WebSocket | Password |
+| `pa console get-or-create` | Get existing or create new console | Password |
 
 ### Web App Management
 
-| Command | Description |
-|---------|-------------|
-| `pa webapp create <domain>` | Create a web app |
-| `pa webapp config <domain> --source-dir <path>` | Configure source directory |
-| `pa webapp config <domain> --virtualenv <path>` | Configure virtualenv path |
-| `pa webapp static <domain> --url <url> --path <path>` | Add static file mapping |
-| `pa webapp reload <domain>` | Reload web app |
+| Command | Description | Auth |
+|---------|-------------|------|
+| `pa webapp create <domain>` | Create a web app | Token |
+| `pa webapp config <domain> --source-dir <path>` | Configure source directory | Token |
+| `pa webapp config <domain> --virtualenv <path>` | Configure virtualenv path | Token |
+| `pa webapp static <domain> --url <url> --path <path>` | Add static file mapping | Token |
+| `pa webapp reload <domain>` | Reload web app (API) | Token |
+| `pa webapp reload-crawler <domain>` | Reload web app (crawler) | Password |
+| `pa webapp hits <domain>` | Get hit statistics | Password |
 
 ### Deployment
 
-| Command | Description |
-|---------|-------------|
-| `pa deploy <dir>` | One-click deploy to default domain |
-| `pa deploy <dir> --domain <domain>` | One-click deploy to custom domain |
+| Command | Description | Auth |
+|---------|-------------|------|
+| `pa deploy <dir>` | One-click deploy to default domain | Token |
+| `pa deploy <dir> --domain <domain>` | One-click deploy to custom domain | Token |
 
-## Crawler Module
+## Typical Workflows
 
-The crawler module provides browser-simulation capabilities for operations not available via REST API.
+### Deploy a new project
 
-### AccountCrawler
-
-```python
-from pa_cli.crawler.account_crawler import AccountCrawler
-
-# Initialize (reads username from config)
-crawler = AccountCrawler()
-
-# Login (reads password from config)
-crawler.login()
-
-# Get API token
-token = crawler.get_token()
-
-# Extend account expiry (free tier)
-crawler.extend_expiry()
-
-# Reload web app
-crawler.reload_webapp("youruser.pythonanywhere.com")
-
-# Get web app hit statistics
-hits = crawler.get_hits("youruser.pythonanywhere.com")
-# Returns: {"hits_current_hour": 0, "hits_previous_hour": 2, ...}
+```bash
+pa init                          # Configure account
+pa deploy ./my-site              # One-click deploy
 ```
 
-### ConsoleCrawler
+### Manage existing web app
 
-```python
-from pa_cli.crawler.console_crawler import ConsoleCrawler
+```bash
+pa webapp reload mysite.pythonanywhere.com           # Reload
+pa webapp hits mysite.pythonanywhere.com             # Check traffic
+pa account extend                                    # Extend expiry
+```
 
-# Initialize
-crawler = ConsoleCrawler()
+### Work with consoles
 
-# Login
-crawler.login("username", "password")
-
-# Get or create console (max 2 for free tier)
-console_id = crawler.get_or_create("username")
-
-# Activate console (starts the process via WebSocket)
-crawler.activate("username", console_id)
-
-# Now use REST API for commands
-from pa_cli.api.consoles import ConsolesClient
-client = ConsolesClient(token="your-api-token")
-client.send_input("username", console_id, "echo hello\n")
-output = client.get_output("username", console_id)
+```bash
+pa console list                  # See available consoles
+pa console get-or-create        # Get or create a console
+pa console activate 12345       # Activate it
+pa console send 12345 "ls -la"  # Run a command
+pa console kill 12345           # Clean up
 ```
 
 ## Configuration
@@ -139,9 +120,24 @@ Configuration is stored at `~/.pa-cli/config.json`:
 ```
 pa_cli/
 ├── api/           # REST API clients (Token auth)
+│   ├── client.py  # BaseClient with Token auth
+│   ├── consoles.py
+│   ├── files.py
+│   └── webapps.py
 ├── cli/           # CLI commands (Typer)
+│   ├── main.py
+│   ├── init_cmd.py
+│   ├── register_cmd.py
+│   ├── account_cmd.py
+│   ├── files_cmd.py
+│   ├── consoles_cmd.py
+│   ├── webapps_cmd.py
+│   └── deploy_cmd.py
 ├── crawler/       # Browser simulation (Session auth)
+│   ├── account_crawler.py
+│   └── console_crawler.py
 ├── workflows/     # Deployment orchestration
+│   └── deploy.py
 └── config.py      # Configuration management
 ```
 
@@ -164,6 +160,47 @@ pytest -v
 # Run specific test file
 pytest tests/test_account_crawler.py
 ```
+
+**Test coverage:** 167 tests passing
+
+## Roadmap
+
+### ✅ Completed (P0/P1)
+
+- [x] Account configuration (`pa init`)
+- [x] Account registration (`pa register`)
+- [x] Auto-fetch API token (`pa account token`)
+- [x] Auto-extend expiry (`pa account extend`)
+- [x] File upload (`pa files upload`)
+- [x] Console management (`pa console *`)
+- [x] Web app management (`pa webapp *`)
+- [x] One-click deployment (`pa deploy`)
+- [x] Hit statistics (`pa webapp hits`)
+
+### 🔲 Planned (P1)
+
+- [ ] File browsing (`pa files ls`)
+- [ ] File download (`pa files download`)
+- [ ] File deletion (`pa files rm`)
+- [ ] Log management (`pa webapp logs`)
+- [ ] Webapp enable/disable (`pa webapp enable/disable`)
+- [ ] CPU usage query (`pa status`)
+
+### 🔲 Planned (P2)
+
+- [ ] Multi-account management (`pa account switch`)
+- [ ] Batch operations (`pa batch`)
+- [ ] SSL management (`pa webapp ssl`)
+- [ ] Delete webapp (`pa webapp delete`)
+
+### 🔲 Planned (P3)
+
+- [ ] Scheduled tasks (`pa tasks`)
+- [ ] Always-on tasks (`pa always-on`)
+- [ ] Disk usage query (`pa status disk`)
+- [ ] System configuration (`pa config`)
+- [ ] Database info (`pa databases`)
+- [ ] File sharing (`pa files share`)
 
 ## License
 
