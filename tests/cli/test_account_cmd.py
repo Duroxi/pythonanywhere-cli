@@ -130,3 +130,49 @@ def test_extend_command_exits_on_login_exception():
 
     assert result.exit_code == 1
     assert "Password not found" in result.output
+
+
+# --- list command tests ---
+
+
+def test_list_command_shows_all_accounts():
+    """list command shows all accounts and marks default."""
+    with patch("pa_cli.cli.account_cmd.Config.list_accounts") as mock_list:
+        mock_list.return_value = [
+            {"username": "user1", "token": "abc123def", "host": "www.pythonanywhere.com"},
+            {"username": "user2", "token": "xyz789ghi", "host": "eu.pythonanywhere.com"},
+        ]
+        with patch("pa_cli.cli.account_cmd.Config.load") as mock_load:
+            mock_load.return_value = {"username": "user1", "token": "t", "host": "h"}
+            result = runner.invoke(app, ["list"])
+
+    assert result.exit_code == 0
+    assert "* user1" in result.output
+    assert "user2" in result.output
+    assert "abc123de" in result.output  # first 8 chars of token
+
+
+def test_list_command_shows_no_token_warning():
+    """list command shows '(no token)' when token is empty."""
+    with patch("pa_cli.cli.account_cmd.Config.list_accounts") as mock_list:
+        mock_list.return_value = [
+            {"username": "user1", "token": "", "host": "www.pythonanywhere.com"},
+        ]
+        with patch("pa_cli.cli.account_cmd.Config.load") as mock_load:
+            mock_load.return_value = {"username": "user1", "token": "", "host": "h"}
+            result = runner.invoke(app, ["list"])
+
+    assert result.exit_code == 0
+    assert "(no token)" in result.output
+
+
+def test_list_command_empty():
+    """list command shows message when no accounts configured."""
+    with patch("pa_cli.cli.account_cmd.Config.list_accounts") as mock_list:
+        mock_list.return_value = []
+        with patch("pa_cli.cli.account_cmd.Config.load") as mock_load:
+            mock_load.side_effect = ValueError("No default account configured.")
+            result = runner.invoke(app, ["list"])
+
+    assert result.exit_code == 0
+    assert "No accounts configured" in result.output

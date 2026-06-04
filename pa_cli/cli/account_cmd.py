@@ -6,6 +6,28 @@ from pa_cli.crawler.account_crawler import AccountCrawler
 app = typer.Typer(help="Account management commands.")
 
 
+@app.command("list")
+def list_accounts():
+    """List all configured accounts."""
+    accounts = Config.list_accounts()
+    if not accounts:
+        typer.echo("No accounts configured. Run 'pa init' to add one.")
+        return
+
+    try:
+        current = Config.load()
+        current_user = current["username"]
+    except (FileNotFoundError, ValueError):
+        current_user = ""
+
+    for account in accounts:
+        prefix = "* " if account["username"] == current_user else "  "
+        token = account.get("token", "")
+        token_display = f"token: {token[:8]}..." if token else "(no token)"
+        host = account.get("host", "www.pythonanywhere.com")
+        typer.echo(f"{prefix}{account['username']}    {host}    {token_display}")
+
+
 @app.command()
 def login():
     """Store password for the current account."""
