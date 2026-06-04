@@ -7,7 +7,7 @@ app = typer.Typer(help="Manage consoles on PythonAnywhere.")
 
 
 def _get_client() -> tuple:
-    account = Config.load()
+    account = Config.load(verbose=True)
     client = ConsolesClient(token=account["token"], host=account["host"])
     return account, client
 
@@ -32,7 +32,7 @@ def activate(
     try:
         from pa_cli.crawler.console_crawler import ConsoleCrawler
 
-        account = Config.load()
+        account = Config.load(verbose=True)
 
         if "password" not in account:
             typer.echo("Password not found. Run 'pa account login' first.", err=True)
@@ -87,7 +87,7 @@ def get_or_create(
     try:
         from pa_cli.crawler.console_crawler import ConsoleCrawler
 
-        account = Config.load()
+        account = Config.load(verbose=True)
 
         if "password" not in account:
             typer.echo("Password not found. Run 'pa account login' first.", err=True)

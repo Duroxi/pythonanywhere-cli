@@ -13,7 +13,7 @@ def deploy(
     python_version: str = typer.Option("python310", "--python", "-p", help="Python version"),
 ):
     """Deploy a local project to PythonAnywhere."""
-    account = Config.load()
+    account = Config.load(verbose=True)
 
     if domain is None:
         domain = f"{account['username']}.pythonanywhere.com"

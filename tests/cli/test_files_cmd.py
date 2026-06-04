@@ -38,3 +38,25 @@ def test_upload_directory_recursive(tmp_path):
         result = runner.invoke(app, ["upload", str(test_dir), "/home/testuser/mysite", "-r"])
 
     assert result.exit_code == 0
+
+
+def test_upload_shows_account_hint(tmp_path):
+    """upload command shows current account in output."""
+    local_file = tmp_path / "test.txt"
+    local_file.write_text("hello")
+
+    def fake_load(**kwargs):
+        if kwargs.get("verbose", False):
+            import typer as _typer
+            _typer.echo("[account: testuser]")
+        return {"username": "testuser", "token": "t", "host": "h"}
+
+    with patch("pa_cli.cli.files_cmd.Config.load", side_effect=fake_load):
+        with patch("pa_cli.cli.files_cmd.FilesClient") as mock_client_cls:
+            mock_client = MagicMock()
+            mock_client.upload.return_value = 200
+            mock_client_cls.return_value = mock_client
+            result = runner.invoke(app, ["upload", str(local_file), "/remote/test.txt"])
+
+    assert result.exit_code == 0
+    assert "[account: testuser]" in result.output

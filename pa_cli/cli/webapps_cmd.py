@@ -8,7 +8,7 @@ app = typer.Typer(help="Manage web apps on PythonAnywhere.")
 
 
 def _get_client() -> tuple:
-    account = Config.load()
+    account = Config.load(verbose=True)
     client = WebappsClient(token=account["token"], host=account["host"])
     return account, client
 
@@ -67,7 +67,7 @@ def hits(
 ):
     """Get web app hit statistics via crawler."""
     try:
-        account = Config.load()
+        account = Config.load(verbose=True)
         crawler = AccountCrawler()
         if not crawler.login():
             typer.echo("Login failed. Check your credentials.", err=True)
@@ -87,7 +87,7 @@ def reload_crawler(
 ):
     """Reload a web app via crawler (alternative to API reload)."""
     try:
-        account = Config.load()
+        account = Config.load(verbose=True)
         crawler = AccountCrawler()
         if not crawler.login():
             typer.echo("Login failed. Check your credentials.", err=True)

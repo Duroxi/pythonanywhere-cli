@@ -31,7 +31,7 @@ def upload(
         typer.echo("Error: Use -r/--recursive to upload directories")
         raise typer.Exit(code=1)
 
-    account = Config.load()
+    account = Config.load(verbose=True)
     client = FilesClient(token=account["token"], host=account["host"])
 
     if local.is_file():
