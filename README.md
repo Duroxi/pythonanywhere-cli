@@ -29,6 +29,9 @@ pa deploy ./my-site
 |---------|-------------|------|
 | `pa init` | Configure account (auto-fetches token) | - |
 | `pa register` | Register a new PythonAnywhere account | - |
+| `pa account list` | List all configured accounts | - |
+| `pa account switch <username>` | Switch default account | - |
+| `pa account remove <username>` | Remove an account | - |
 | `pa account login` | Store password for crawler operations | - |
 | `pa account token` | Fetch API token from account page | Password |
 | `pa account extend` | Extend free tier account expiry | Password |
@@ -95,6 +98,17 @@ pa console get-or-create        # Get or create a console
 pa console activate 12345       # Activate it
 pa console send 12345 "ls -la"  # Run a command
 pa console kill 12345           # Clean up
+```
+
+### Manage multiple accounts
+
+```bash
+pa init                          # Add first account
+pa init                          # Add second account (becomes default)
+pa account list                  # See all accounts
+pa account switch user1          # Switch back to first
+pa deploy ./site                 # Deploys under user1
+pa account remove user2          # Remove an account
 ```
 
 ## Configuration
