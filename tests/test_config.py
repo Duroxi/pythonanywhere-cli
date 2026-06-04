@@ -240,3 +240,34 @@ def test_remove_raises_for_nonexistent_user(tmp_path):
             assert False, "Should have raised ValueError"
         except ValueError:
             pass
+
+
+def test_load_verbose_prints_account_hint(tmp_path, capsys):
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [{"username": "testuser", "token": "abc123", "host": "www.pythonanywhere.com"}],
+        "default_account": "testuser",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        account = Config.load(verbose=True)
+
+    captured = capsys.readouterr()
+    assert "[account: testuser]" in captured.out
+    assert account["username"] == "testuser"
+
+
+def test_load_default_is_silent(tmp_path, capsys):
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [{"username": "testuser", "token": "abc123", "host": "www.pythonanywhere.com"}],
+        "default_account": "testuser",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        Config.load()
+
+    captured = capsys.readouterr()
+    assert captured.out == ""

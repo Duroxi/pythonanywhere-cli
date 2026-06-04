@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import typer
+
 CONFIG_PATH = Path.home() / ".pa-cli" / "config.json"
 
 
@@ -58,7 +60,7 @@ class Config:
         CONFIG_PATH.write_text(json.dumps(data, indent=2))
 
     @staticmethod
-    def load(username: str | None = None) -> dict:
+    def load(username: str | None = None, verbose: bool = False) -> dict:
         if not CONFIG_PATH.exists():
             raise FileNotFoundError(f"Config not found. Run 'pa init' first.")
 
@@ -67,6 +69,8 @@ class Config:
         if username:
             for account in data["accounts"]:
                 if account["username"] == username:
+                    if verbose:
+                        typer.echo(f"[account: {username}]")
                     return account
             raise ValueError(f"Account '{username}' not found in config.")
 
@@ -74,6 +78,8 @@ class Config:
         default = data.get("default_account")
         for account in data["accounts"]:
             if account["username"] == default:
+                if verbose:
+                    typer.echo(f"[account: {default}]")
                 return account
 
         raise ValueError("No default account configured.")
