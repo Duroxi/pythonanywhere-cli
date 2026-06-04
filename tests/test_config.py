@@ -106,3 +106,64 @@ def test_save_update_preserves_existing_account_structure(tmp_path):
     data = json.loads(config_path.read_text())
     assert len(data["accounts"]) == 1
     assert data["accounts"][0]["password"] == "newpw"
+
+
+def test_list_accounts_returns_all_accounts(tmp_path):
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [
+            {"username": "user1", "token": "t1", "host": "h1"},
+            {"username": "user2", "token": "t2", "host": "h2"},
+        ],
+        "default_account": "user1",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        accounts = Config.list_accounts()
+
+    assert len(accounts) == 2
+    assert accounts[0]["username"] == "user1"
+    assert accounts[1]["username"] == "user2"
+
+
+def test_list_accounts_returns_empty_list_when_no_config(tmp_path):
+    config_path = tmp_path / "config.json"
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        accounts = Config.list_accounts()
+
+    assert accounts == []
+
+
+def test_set_default_changes_default_account(tmp_path):
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [
+            {"username": "user1", "token": "t1", "host": "h1"},
+            {"username": "user2", "token": "t2", "host": "h2"},
+        ],
+        "default_account": "user1",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        Config.set_default("user2")
+
+    data = json.loads(config_path.read_text())
+    assert data["default_account"] == "user2"
+
+
+def test_set_default_raises_for_nonexistent_user(tmp_path):
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [{"username": "user1", "token": "t1", "host": "h1"}],
+        "default_account": "user1",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        try:
+            Config.set_default("nobody")
+            assert False, "Should have raised ValueError"
+        except ValueError:
+            pass

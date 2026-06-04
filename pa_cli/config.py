@@ -77,3 +77,21 @@ class Config:
                 return account
 
         raise ValueError("No default account configured.")
+
+    @staticmethod
+    def list_accounts() -> list[dict]:
+        if not CONFIG_PATH.exists():
+            return []
+        data = json.loads(CONFIG_PATH.read_text())
+        return data.get("accounts", [])
+
+    @staticmethod
+    def set_default(username: str) -> None:
+        if not CONFIG_PATH.exists():
+            raise FileNotFoundError(f"Config not found. Run 'pa init' first.")
+        data = json.loads(CONFIG_PATH.read_text())
+        found = any(a["username"] == username for a in data.get("accounts", []))
+        if not found:
+            raise ValueError(f"Account '{username}' not found in config.")
+        data["default_account"] = username
+        CONFIG_PATH.write_text(json.dumps(data, indent=2))
