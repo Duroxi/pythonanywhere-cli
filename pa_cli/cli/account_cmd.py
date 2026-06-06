@@ -43,7 +43,7 @@ def list_accounts():
         return
 
     try:
-        current = Config.load()
+        current = Config.load(verbose=True)
         current_user = current["username"]
     except (FileNotFoundError, ValueError):
         current_user = ""
@@ -75,6 +75,8 @@ def token(
             typer.echo("Login failed. Check your credentials.", err=True)
             raise typer.Exit(code=1)
 
+        typer.echo(f"[account: {crawler.username}]")
+
         if revoke:
             new_token = crawler.create_token()
             Config.save(token=new_token)
@@ -101,8 +103,18 @@ def extend():
         if not crawler.login():
             typer.echo("Login failed. Check your credentials.", err=True)
             raise typer.Exit(code=1)
+
+        typer.echo(f"[account: {crawler.username}]")
+
+        current_expiry = crawler.get_expiry_date()
+        if current_expiry:
+            typer.echo(f"Current expiry: {current_expiry}")
+
         if crawler.extend_expiry():
             typer.echo("Account expiry extended successfully.")
+            new_expiry = crawler.get_expiry_date()
+            if new_expiry:
+                typer.echo(f"New expiry: {new_expiry}")
         else:
             typer.echo("Failed to extend account expiry.", err=True)
             raise typer.Exit(code=1)

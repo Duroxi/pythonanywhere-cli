@@ -12,7 +12,11 @@ class AccountCrawler:
         self.base_url = f"https://{resolved_host}"
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Host": resolved_host,
+            "Origin": self.base_url,
+            "Referer": f"{self.base_url}/login/",
+            "Upgrade-Insecure-Requests": "1",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
         })
 
     def register(self, username: str, email: str, password: str) -> bool:
@@ -168,7 +172,8 @@ class AccountCrawler:
 
         try:
             resp = self.session.get(webapps_url)
-            resp.raise_for_status()
+            if resp.status_code != 200:
+                raise Exception(f"Webapps page returned HTTP {resp.status_code}")
         except requests.RequestException as e:
             raise Exception(f"Failed to fetch webapps page: {e}") from e
 
@@ -200,6 +205,24 @@ class AccountCrawler:
             raise Exception(f"Extend request failed: {e}") from e
 
         return extend_resp.status_code in (200, 302)
+
+    def get_expiry_date(self, username: str | None = None) -> str | None:
+        """Get account expiry date from webapps page. Returns text or None."""
+        resolved = username or self.username
+        webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
+
+        try:
+            resp = self.session.get(webapps_url)
+            if resp.status_code != 200:
+                return None
+        except requests.RequestException:
+            return None
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        expiry_elem = soup.find("p", class_="webapp_expiry")
+        if expiry_elem:
+            return expiry_elem.get_text(strip=True)
+        return None
 
     def reload_webapp(self, domain: str, username: str | None = None) -> bool:
         resolved = username or self.username

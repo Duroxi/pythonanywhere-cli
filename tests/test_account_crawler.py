@@ -21,6 +21,7 @@ REGISTER_PAGE_HTML = '<html><body><form><input type="hidden" name="csrfmiddlewar
 def _mock_get_response(html=REGISTER_PAGE_HTML):
     resp = MagicMock()
     resp.text = html
+    resp.status_code = 200
     resp.raise_for_status = MagicMock()
     return resp
 
