@@ -79,11 +79,13 @@ def reload(
 
 @app.command("hits")
 def hits(
-    domain_name: str = typer.Argument(..., help="Domain name"),
+    domain_name: str = typer.Argument(None, help="Domain name (default: {username}.pythonanywhere.com)"),
 ):
     """Get web app hit statistics via crawler."""
     try:
         account = Config.load(verbose=True)
+        if domain_name is None:
+            domain_name = f"{account['username']}.pythonanywhere.com"
         crawler = AccountCrawler()
         crawler.login()
         data = crawler.get_hits(domain_name)
@@ -97,11 +99,13 @@ def hits(
 
 @app.command("reload-crawler")
 def reload_crawler(
-    domain_name: str = typer.Argument(..., help="Domain name"),
+    domain_name: str = typer.Argument(None, help="Domain name (default: {username}.pythonanywhere.com)"),
 ):
     """Reload a web app via crawler (alternative to API reload)."""
     try:
         account = Config.load(verbose=True)
+        if domain_name is None:
+            domain_name = f"{account['username']}.pythonanywhere.com"
         crawler = AccountCrawler()
         crawler.login()
         if crawler.reload_webapp(domain_name):
