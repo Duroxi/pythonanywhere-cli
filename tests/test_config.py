@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from pa_cli.config import Config
+from pa_cli.config import Config, _encrypt, _decrypt
 
 
 def test_save_creates_config_file(tmp_path):
@@ -53,7 +53,9 @@ def test_save_with_password(tmp_path):
 
     assert config_path.exists()
     data = json.loads(config_path.read_text())
-    assert data["accounts"][0]["password"] == "secret"
+    assert "password" not in data["accounts"][0]
+    assert "password_enc" in data["accounts"][0]
+    assert data["accounts"][0]["password_enc"] != "secret"
 
 
 def test_save_without_password_backward_compat(tmp_path):
@@ -105,7 +107,8 @@ def test_save_update_preserves_existing_account_structure(tmp_path):
 
     data = json.loads(config_path.read_text())
     assert len(data["accounts"]) == 1
-    assert data["accounts"][0]["password"] == "newpw"
+    assert "password_enc" in data["accounts"][0]
+    assert "password" not in data["accounts"][0]
 
 
 def test_list_accounts_returns_all_accounts(tmp_path):
@@ -271,3 +274,65 @@ def test_load_default_is_silent(tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
+
+
+# --- encryption tests ---
+
+
+def test_encrypt_decrypt_roundtrip():
+    """Encrypt then decrypt returns original text."""
+    assert _decrypt(_encrypt("hello")) == "hello"
+    assert _decrypt(_encrypt("benbenzhu.20")) == "benbenzhu.20"
+    assert _decrypt(_encrypt("")) == ""
+
+
+def test_encrypt_produces_different_output():
+    """Encrypted text is not the same as plaintext."""
+    assert _encrypt("secret") != "secret"
+    assert len(_encrypt("secret")) > 0
+
+
+def test_load_decrypts_password(tmp_path):
+    """Config.load() decrypts password_enc and returns it as 'password'."""
+    from pa_cli.config import _encrypt as enc
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [
+            {"username": "testuser", "token": "t", "host": "h", "password_enc": enc("mypassword")}
+        ],
+        "default_account": "testuser",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        account = Config.load()
+
+    assert account["password"] == "mypassword"
+    assert "password_enc" not in account
+
+
+def test_load_handles_legacy_plaintext_password(tmp_path):
+    """Config.load() handles old plaintext password field."""
+    config_path = tmp_path / "config.json"
+    config_data = {
+        "accounts": [
+            {"username": "testuser", "token": "t", "host": "h", "password": "plaintext"}
+        ],
+        "default_account": "testuser",
+    }
+    config_path.write_text(json.dumps(config_data))
+
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        account = Config.load()
+
+    assert account["password"] == "plaintext"
+
+
+def test_save_then_load_password_roundtrip(tmp_path):
+    """Save password, load it back, verify it matches."""
+    config_path = tmp_path / "config.json"
+    with patch("pa_cli.config.CONFIG_PATH", config_path):
+        Config.save(username="testuser", token="t", host="h", password="mypassword")
+        account = Config.load()
+
+    assert account["password"] == "mypassword"

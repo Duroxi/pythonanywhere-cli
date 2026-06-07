@@ -1,9 +1,46 @@
+import base64
+import hashlib
 import json
+import os
 from pathlib import Path
 
 import typer
 
 CONFIG_PATH = Path.home() / ".pa-cli" / "config.json"
+
+
+def _get_machine_key() -> bytes:
+    """Generate encryption key from machine-specific info."""
+    seed = f"{os.environ.get('USERNAME', '')}-{os.environ.get('COMPUTERNAME', '')}"
+    return hashlib.sha256(seed.encode()).digest()
+
+
+def _encrypt(plaintext: str) -> str:
+    """Encrypt a string using machine key. Returns base64-encoded ciphertext."""
+    key = _get_machine_key()
+    data = plaintext.encode("utf-8")
+    encrypted = bytes(a ^ b for a, b in zip(data, key * (len(data) // len(key) + 1)))
+    return base64.b64encode(encrypted).decode("ascii")
+
+
+def _decrypt(ciphertext: str) -> str:
+    """Decrypt a base64-encoded ciphertext using machine key."""
+    key = _get_machine_key()
+    data = base64.b64decode(ciphertext)
+    decrypted = bytes(a ^ b for a, b in zip(data, key * (len(data) // len(key) + 1)))
+    return decrypted.decode("utf-8")
+
+
+def _decrypt_account(account: dict) -> dict:
+    """Decrypt password in account dict. Handles both encrypted and legacy plaintext."""
+    account = dict(account)
+    if "password_enc" in account:
+        try:
+            account["password"] = _decrypt(account["password_enc"])
+        except Exception:
+            account["password"] = None
+        del account["password_enc"]
+    return account
 
 
 class Config:
@@ -39,7 +76,8 @@ class Config:
             if host is not None:
                 account["host"] = host
             if password is not None:
-                account["password"] = password
+                account["password_enc"] = _encrypt(password)
+                account.pop("password", None)
         else:
             account = {
                 "username": target_username,
@@ -47,7 +85,7 @@ class Config:
                 "host": host or "www.pythonanywhere.com",
             }
             if password is not None:
-                account["password"] = password
+                account["password_enc"] = _encrypt(password)
 
         # Update existing or append new
         existing = [i for i, a in enumerate(data["accounts"]) if a["username"] == target_username]
@@ -71,7 +109,7 @@ class Config:
                 if account["username"] == username:
                     if verbose:
                         typer.echo(f"[account: {username}]")
-                    return account
+                    return _decrypt_account(account)
             raise ValueError(f"Account '{username}' not found in config.")
 
         # Return default account
@@ -80,7 +118,7 @@ class Config:
             if account["username"] == default:
                 if verbose:
                     typer.echo(f"[account: {default}]")
-                return account
+                return _decrypt_account(account)
 
         raise ValueError("No default account configured.")
 
