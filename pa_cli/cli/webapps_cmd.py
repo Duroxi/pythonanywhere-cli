@@ -41,15 +41,28 @@ def create(
 
 @app.command()
 def config(
-    domain_name: str = typer.Argument(..., help="Domain name"),
-    source_dir: str = typer.Option(..., "--source-dir", "-s", help="Source directory path"),
+    domain_name: str = typer.Argument(None, help="Domain name (default: {username}.pythonanywhere.com)"),
+    source_dir: str = typer.Option(None, "--source-dir", "-s", help="Source directory path"),
     virtualenv: str = typer.Option(None, "--virtualenv", "-v", help="Virtualenv path"),
+    python_version: str = typer.Option(None, "--python-version", "-p", help="Python version (e.g. 3.10, 3.11)"),
+    working_dir: str = typer.Option(None, "--working-dir", "-w", help="Working directory path"),
 ):
     """Configure a web app."""
     account, client = _get_client()
-    kwargs = {"source_directory": _fix_remote_path(source_dir)}
+    if domain_name is None:
+        domain_name = f"{account['username']}.pythonanywhere.com"
+    kwargs = {}
+    if source_dir:
+        kwargs["source_directory"] = _fix_remote_path(source_dir)
     if virtualenv:
         kwargs["virtualenv_path"] = _fix_remote_path(virtualenv)
+    if python_version:
+        kwargs["python_version"] = python_version
+    if working_dir:
+        kwargs["working_directory"] = _fix_remote_path(working_dir)
+    if not kwargs:
+        typer.echo("Error: No configuration specified. Use --source-dir, --virtualenv, --python-version, or --working-dir.", err=True)
+        raise typer.Exit(code=1)
     client.update(account["username"], domain_name, **kwargs)
     typer.echo(f"Webapp {domain_name} configured.")
 
