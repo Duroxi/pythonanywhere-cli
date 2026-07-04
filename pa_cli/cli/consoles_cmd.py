@@ -11,12 +11,6 @@ from pa_cli.exceptions import APIError, AuthError, NetworkError
 app = typer.Typer(help="Manage consoles on PythonAnywhere.")
 
 
-@app.callback()
-def main():
-    """Manage consoles on PythonAnywhere."""
-    pass
-
-
 @app.command("list")
 def list_consoles():
     """List all consoles."""

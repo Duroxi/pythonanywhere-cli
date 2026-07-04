@@ -1,3 +1,4 @@
+import shlex
 import time
 from pathlib import Path
 
@@ -98,7 +99,7 @@ def deploy(
     token: str,
     host: str,
     domain: str,
-    python_version: str = "python310",
+    python_version: str = "python312",
     dry_run: bool = False,
 ) -> str:
     local_path = Path(local_dir)
@@ -146,11 +147,11 @@ def deploy(
         console = consoles_client.create(username)
         console_id = console["id"]
 
-        commands = [f"cd {remote_base}"]
+        commands = [f"cd {shlex.quote(remote_base)}"]
         if (local_path / "requirements.txt").exists():
             commands.extend([
-                f"mkvirtualenv {local_path.name} --python=/usr/bin/{python_version}",
-                f"workon {local_path.name} && pip install -r requirements.txt",
+                f"mkvirtualenv {shlex.quote(local_path.name)} --python=/usr/bin/{shlex.quote(python_version)}",
+                f"workon {shlex.quote(local_path.name)} && pip install -r requirements.txt",
             ])
 
         for cmd in commands:

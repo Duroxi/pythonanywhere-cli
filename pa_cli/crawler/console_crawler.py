@@ -14,12 +14,13 @@ class ConsoleCrawler:
         self.session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         })
+        self.timeout = (10, 30)  # (connect, read) timeout in seconds
 
     def login(self, username: str, password: str) -> bool:
         login_url = f"{self.base_url}/login/"
 
         try:
-            login_page_resp = self.session.get(login_url)
+            login_page_resp = self.session.get(login_url, timeout=self.timeout)
             login_page_resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch login page: {e}") from e
@@ -42,7 +43,7 @@ class ConsoleCrawler:
         }
 
         try:
-            login_resp = self.session.post(login_url, data=data, headers=headers)
+            login_resp = self.session.post(login_url, data=data, headers=headers, timeout=self.timeout)
             login_resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Login request failed: {e}") from e
@@ -56,7 +57,7 @@ class ConsoleCrawler:
         url = f"{self.base_url}/api/v0/user/{username}/consoles/"
 
         try:
-            resp = self.session.get(url)
+            resp = self.session.get(url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to list consoles: {e}") from e
@@ -75,7 +76,7 @@ class ConsoleCrawler:
         }
 
         try:
-            resp = self.session.post(url, json={"executable": executable}, headers=headers)
+            resp = self.session.post(url, json={"executable": executable}, headers=headers, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to create console: {e}") from e
@@ -94,7 +95,7 @@ class ConsoleCrawler:
         }
 
         try:
-            resp = self.session.delete(url, headers=headers)
+            resp = self.session.delete(url, headers=headers, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to delete console: {e}") from e
@@ -116,7 +117,7 @@ class ConsoleCrawler:
         frame_url = f"{self.base_url}/user/{username}/consoles/{console_id}/frame/"
 
         try:
-            resp = self.session.get(frame_url)
+            resp = self.session.get(frame_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch console frame page: {e}") from e

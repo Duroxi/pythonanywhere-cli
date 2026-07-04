@@ -57,7 +57,8 @@ def test_list_returns_json_dict():
         result = client.list(username="testuser", remote_path="/home/testuser/")
 
     mock_get.assert_called_once_with(
-        "https://www.pythonanywhere.com/api/v0/user/testuser/files/path/home/testuser/"
+        "https://www.pythonanywhere.com/api/v0/user/testuser/files/path/home/testuser/",
+        timeout=(10, 30),
     )
     assert result == expected
 
@@ -91,7 +92,8 @@ def test_download_returns_bytes():
         result = client.download(username="testuser", remote_path="/home/testuser/file.txt")
 
     mock_get.assert_called_once_with(
-        "https://www.pythonanywhere.com/api/v0/user/testuser/files/path/home/testuser/file.txt"
+        "https://www.pythonanywhere.com/api/v0/user/testuser/files/path/home/testuser/file.txt",
+        timeout=(10, 30),
     )
     assert result == file_content
 
@@ -123,7 +125,8 @@ def test_delete_makes_delete_request():
         client.delete(username="testuser", remote_path="/home/testuser/file.txt")
 
     mock_delete.assert_called_once_with(
-        "https://www.pythonanywhere.com/api/v0/user/testuser/files/path/home/testuser/file.txt"
+        "https://www.pythonanywhere.com/api/v0/user/testuser/files/path/home/testuser/file.txt",
+        timeout=(10, 30),
     )
 
 

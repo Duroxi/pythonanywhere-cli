@@ -30,13 +30,16 @@ def init_callback(
     if password is None:
         password = typer.prompt("Password", hide_input=True)
 
-    # Save credentials to config first so AccountCrawler can read them
-    Config.save(username=username, password=password, host=host)
+    # Save username and host first (without password) so AccountCrawler can read them
+    Config.save(username=username, host=host)
 
     # Auto-login and fetch API token
     try:
         crawler = AccountCrawler()
-        crawler.login()
+        crawler.login(password=password)
+
+        # Login succeeded, now save the password
+        Config.save(password=password)
 
         # Try to get existing token, create one if it doesn't exist
         try:

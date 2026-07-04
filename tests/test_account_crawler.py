@@ -90,7 +90,7 @@ def test_register_fetches_csrf_from_register_page():
 
         crawler.register("testuser", "test@example.com", "securepass123")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/registration/register/beginner/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/registration/register/beginner/", timeout=(10, 30))
 
 
 def test_register_posts_correct_form_data():
@@ -216,7 +216,7 @@ def test_get_token_fetches_account_page():
     with patch.object(crawler.session, "get", return_value=_mock_get_response(ACCOUNT_PAGE_HTML)) as mock_get:
         crawler.get_token("testuser")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/account/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/account/", timeout=(10, 30))
 
 
 def test_get_token_uses_custom_host():
@@ -297,7 +297,7 @@ def test_extend_expiry_fetches_webapps_page():
          )):
         crawler.extend_expiry("testuser")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/webapps/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/webapps/", timeout=(10, 30))
 
 
 def test_extend_expiry_posts_csrf_to_extend_url():
@@ -415,7 +415,7 @@ def test_reload_webapp_gets_webapps_page():
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")):
         crawler.reload_webapp("testuser.pythonanywhere.com", "testuser")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/webapps/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/testuser/webapps/", timeout=(10, 30))
 
 
 def test_reload_webapp_posts_with_correct_headers():
@@ -550,6 +550,7 @@ def test_get_hits_sends_correct_url():
             "X-Requested-With": "XMLHttpRequest",
             "Referer": "https://www.pythonanywhere.com/user/testuser/webapps/",
         },
+        timeout=(10, 30),
     )
 
 
@@ -754,7 +755,7 @@ def test_get_token_uses_self_username_when_no_param():
     with patch.object(crawler.session, "get", return_value=_mock_get_response(ACCOUNT_PAGE_HTML)) as mock_get:
         token = crawler.get_token()
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/account/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/account/", timeout=(10, 30))
     assert token == "abcdef1234567890abcdef1234567890abcdef12"
 
 
@@ -765,7 +766,7 @@ def test_get_token_explicit_username_overrides_self():
     with patch.object(crawler.session, "get", return_value=_mock_get_response(ACCOUNT_PAGE_HTML)) as mock_get:
         crawler.get_token("otheruser")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/account/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/account/", timeout=(10, 30))
 
 
 # --- extend_expiry with config-based username ---
@@ -801,7 +802,7 @@ def test_extend_expiry_explicit_username_overrides_self():
          )):
         crawler.extend_expiry("otheruser")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/webapps/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/webapps/", timeout=(10, 30))
 
 
 # --- reload_webapp with config-based username ---
@@ -835,7 +836,7 @@ def test_reload_webapp_explicit_username_overrides_self():
          patch.object(crawler.session, "post", return_value=_mock_reload_post_response("OK")):
         crawler.reload_webapp("otheruser.pythonanywhere.com", "otheruser")
 
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/webapps/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/otheruser/webapps/", timeout=(10, 30))
 
 
 # --- get_hits with config-based username ---
@@ -952,7 +953,7 @@ def test_get_disk_usage():
         result = crawler.get_disk_usage("configuser")
 
     assert result == DISK_USAGE_RESPONSE
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/quota_information/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/quota_information/", timeout=(10, 30))
 
 
 def test_get_disk_usage_uses_self_username_when_no_param():
@@ -1030,7 +1031,7 @@ def test_get_disk_usage():
         result = crawler.get_disk_usage("configuser")
 
     assert result == disk_data
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/quota_information/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/user/configuser/quota_information/", timeout=(10, 30))
 
 
 def test_get_disk_usage_uses_self_username_when_no_param():

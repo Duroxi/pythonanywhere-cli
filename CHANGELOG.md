@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Console Management
 - `pa console list` - List all consoles
 - `pa console create` - Create a new console
-- `pa console send` - Send command and get output
+- `pa console send` - Send command and get output (auto-detects/creates/activates console)
 - `pa console kill` - Kill a console
 - `pa console activate` - Activate console via WebSocket
 - `pa console get-or-create` - Get existing or create new console
@@ -75,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session authentication (crawler) for browser-only operations
 - Multi-account support with account switching
 - Configuration validation with clear error messages
-- Comprehensive test suite (277+ tests)
+- Comprehensive test suite (473 tests)
 - Error handling with custom exception hierarchy
 - Progress bar for file uploads
 - Dry-run support for deployments

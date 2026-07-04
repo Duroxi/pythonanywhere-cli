@@ -8,7 +8,7 @@ Console management commands for creating, operating, and managing remote console
 |---------|-------------|------|
 | `pa console list` | List all consoles | Token |
 | `pa console create` | Create new console | Token |
-| `pa console send <id> <cmd>` | Send command and get output | Token |
+| `pa console send <cmd> [id]` | Send command and get output (auto-detects console) | Token |
 | `pa console kill <id>` | Kill console | Token |
 | `pa console activate <id>` | Activate console | Password |
 | `pa console get-or-create` | Smart get or create | Password |
@@ -107,20 +107,20 @@ Error: API error 400: You have too many consoles.
 
 ## pa console send
 
-Send a command to console and get output.
+Send a command to console and get output. Auto-detects, creates, and activates console if needed.
 
 ### Syntax
 
 ```bash
-pa console send <console_id> <command> [--wait/--no-wait] [--timeout <seconds>]
+pa console send <command> [console_id] [--wait/--no-wait] [--timeout <seconds>]
 ```
 
 ### Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| `console_id` | Console ID |
 | `command` | Command to execute |
+| `console_id` | Console ID (optional, auto-detected if omitted) |
 
 ### Options
 
@@ -132,42 +132,38 @@ pa console send <console_id> <command> [--wait/--no-wait] [--timeout <seconds>]
 
 ### Examples
 
-**Send command and get output:**
+**Send command (auto-detect console):**
 
 ```bash
-$ pa console send 46955916 "echo hello"
-16:16 ~ $ echo hello
+$ pa console send "echo hello"
 hello
-16:16 ~ $
+```
+
+**Send command to specific console:**
+
+```bash
+$ pa console send "echo hello" 46955916
+hello
 ```
 
 **Send command without waiting:**
 
 ```bash
-$ pa console send 46955916 "long-running-command" --no-wait
+$ pa console send "long-running-command" --no-wait
 ```
 
 **Send command with custom timeout:**
 
 ```bash
-$ pa console send 46955916 "pip install flask" --timeout 120
+$ pa console send "pip install flask" --timeout 120
 ```
 
 ### Error Scenarios
 
-**Console not started:**
+**Console not found (when specifying ID):**
 
 ```bash
-$ pa console send 46955916 "ls"
-Error: API error 412: Console not yet started.
-```
-
-**Solution**: Run `pa console activate 46955916` first.
-
-**Console not found:**
-
-```bash
-$ pa console send 99999 "ls"
+$ pa console send "ls" 99999
 Error: API error 404: Not found.
 ```
 
@@ -176,8 +172,7 @@ Error: API error 404: Not found.
 ### Prerequisites
 
 - Must run `pa init` first
-- Must create console first (`pa console create` or `pa console get-or-create`)
-- If console not started, run `pa console activate <id>` first
+- For auto-detect mode, password must be stored (`pa account login`) for auto-create/activate
 
 ---
 
@@ -330,7 +325,22 @@ Password not found. Run 'pa account login' first.
 
 ## Typical Workflow
 
-### Complete console usage flow
+### Simplified flow (recommended)
+
+```bash
+# Send command directly - auto-detects, creates, and activates console
+$ pa console send "ls -la"
+total 8
+drwxr-xr-x 2 user user 4096 Jun  3 16:16 .
+drwxr-xr-x 3 user user 4096 Jun  3 16:16 ..
+-rw-r--r-- 1 user user   18 Jun  3 16:16 README.txt
+
+# Clean up when done
+$ pa console kill 46955916
+Console 46955916 killed.
+```
+
+### Manual flow (for debugging)
 
 ```bash
 # 1. List existing consoles
@@ -341,8 +351,8 @@ ID: 46955916, Name: Bash console 46955916
 $ pa console activate 46955916
 Console 46955916 activated successfully.
 
-# 3. Send command
-$ pa console send 46955916 "ls -la"
+# 3. Send command to specific console
+$ pa console send "ls -la" 46955916
 total 8
 drwxr-xr-x 2 user user 4096 Jun  3 16:16 .
 drwxr-xr-x 3 user user 4096 Jun  3 16:16 ..
@@ -351,23 +361,4 @@ drwxr-xr-x 3 user user 4096 Jun  3 16:16 ..
 # 4. Clean up
 $ pa console kill 46955916
 Console 46955916 killed.
-```
-
-### Simplified flow with get-or-create
-
-```bash
-# Auto get or create console
-$ pa console get-or-create
-Console ready: 46955916
-
-# Use directly (if console already activated)
-$ pa console send 46955916 "echo hello"
-hello
-
-# If console not activated, activate first
-$ pa console activate 46955916
-Console 46955916 activated successfully.
-
-$ pa console send 46955916 "echo hello"
-hello
 ```

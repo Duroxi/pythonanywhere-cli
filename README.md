@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/pythonanywhere-clis)](https://pypi.org/project/pythonanywhere-clis/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pythonanywhere-clis)](https://pypi.org/project/pythonanywhere-clis/)
-[![Tests](https://img.shields.io/badge/tests-454%20passed-brightgreen)](https://github.com/Duroxi/pythonanywhere-clis/actions)
+[![Tests](https://img.shields.io/badge/tests-473%20passed-brightgreen)](https://github.com/Duroxi/pythonanywhere-clis/actions)
 [![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](https://github.com/Duroxi/pythonanywhere-clis)
 [![Documentation](https://readthedocs.org/projects/pythonanywhere-clis/badge/?version=latest)](https://pythonanywhere-clis.readthedocs.io/en/latest/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -66,7 +66,7 @@ pa deploy ./my-site
 |---------|-------------|------|
 | `pa console list` | List all consoles | Token |
 | `pa console create [--executable]` | Create a new console | Token |
-| `pa console send <id> <cmd> [--timeout]` | Send command and get output | Token |
+| `pa console send <cmd> [id] [--timeout]` | Send command and get output (auto-detects console) | Token |
 | `pa console kill <id>` | Kill a console | Token |
 | `pa console activate <id>` | Activate console via WebSocket | Password |
 | `pa console get-or-create [-e]` | Get existing or create new console | Password |
@@ -149,9 +149,8 @@ pa account extend                                    # Extend expiry
 
 ```bash
 pa console list                  # See available consoles
-pa console get-or-create        # Get or create a console
-pa console activate 12345       # Activate it
-pa console send 12345 "ls -la"  # Run a command
+pa console send "ls -la"        # Run a command (auto-detects/creates/activates console)
+pa console send 12345 "ls -la"  # Run on specific console
 pa console kill 12345           # Clean up
 ```
 
@@ -177,7 +176,7 @@ Configuration is stored at `~/.pa-cli/config.json`:
       "username": "yourusername",
       "token": "your-api-token",
       "host": "www.pythonanywhere.com",
-      "password": "your-password"
+      "password_enc": "encrypted-password-base64"
     }
   ],
   "default_account": "yourusername"
@@ -243,7 +242,7 @@ pytest --cov=pa_cli --cov-report=html
 pytest tests/cli/test_webapps_cmd.py
 ```
 
-**Test coverage:** 454 tests passing, 91% coverage
+**Test coverage:** 473 tests passing, 91% coverage
 
 ## License
 

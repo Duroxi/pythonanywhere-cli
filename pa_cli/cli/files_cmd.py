@@ -4,15 +4,9 @@ import typer
 
 from pa_cli.api.files import FilesClient
 from pa_cli.cli.utils import get_client, fix_remote_path
-from pa_cli.exceptions import APIError, NetworkError, NotFoundError
+from pa_cli.exceptions import APIError, AuthError, NetworkError, NotFoundError
 
 app = typer.Typer(help="Manage files on PythonAnywhere.")
-
-
-@app.callback()
-def main():
-    """Manage files on PythonAnywhere."""
-    pass
 
 
 def _resolve_path(path: str | None, username: str, is_dir: bool = True) -> str:
@@ -52,6 +46,9 @@ def ls(
                 typer.echo(f"  {name}")
     except NotFoundError as e:
         typer.echo(f"Path not found: {e}", err=True)
+        raise typer.Exit(code=1)
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
         raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
@@ -100,6 +97,9 @@ def download(
             typer.echo(f"Downloaded {remote_path} -> {target}")
     except NotFoundError as e:
         typer.echo(f"File not found: {e}", err=True)
+        raise typer.Exit(code=1)
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
         raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
@@ -168,6 +168,9 @@ def upload(
     except NotFoundError as e:
         typer.echo(f"Path not found: {e}", err=True)
         raise typer.Exit(code=1)
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
         raise typer.Exit(code=1)
@@ -220,6 +223,9 @@ def rm(
     except NotFoundError as e:
         typer.echo(f"File not found: {e}", err=True)
         raise typer.Exit(code=1)
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
         raise typer.Exit(code=1)
@@ -242,6 +248,9 @@ def share(
     except NotFoundError as e:
         typer.echo(f"File not found: {e}", err=True)
         raise typer.Exit(code=1)
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
         raise typer.Exit(code=1)
@@ -261,7 +270,10 @@ def unshare(
         client.unshare(account["username"], resolved)
         typer.echo(f"Stopped sharing: {remote_path}")
     except NotFoundError as e:
-        typer.echo(f"File not found或未分享: {e}", err=True)
+        typer.echo(f"File not found or not shared: {e}", err=True)
+        raise typer.Exit(code=1)
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
         raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
@@ -284,6 +296,9 @@ def share_status(
         typer.echo(f"File is shared: {full_url}")
     except NotFoundError:
         typer.echo(f"File is not shared: {remote_path}")
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
     except NetworkError as e:
         typer.echo(f"Network error: {e}", err=True)
         raise typer.Exit(code=1)

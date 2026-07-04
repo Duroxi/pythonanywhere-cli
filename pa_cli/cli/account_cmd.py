@@ -15,7 +15,10 @@ def switch(
     try:
         Config.set_default(username)
         typer.echo(f"Switched to account '{username}'.")
-    except Exception as e:
+    except FileNotFoundError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(code=1)
 
@@ -30,7 +33,10 @@ def remove(
         typer.echo(f"Removed account '{username}'.")
         if new_default:
             typer.echo(f"Switched to account '{new_default}'.")
-    except Exception as e:
+    except FileNotFoundError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(code=1)
 

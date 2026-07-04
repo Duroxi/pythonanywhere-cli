@@ -6,7 +6,7 @@
 
 MVP 聚焦最小闭环：**有账号 → 上传代码 → 创建网站 → 可访问**。
 
-**当前状态**: MVP 已完成，共实现 48 个命令，277+ 测试通过。
+**当前状态**: MVP 已完成，共实现 48 个命令，473 测试通过。
 
 ## 2. MVP 功能范围
 
@@ -17,8 +17,7 @@ MVP 聚焦最小闭环：**有账号 → 上传代码 → 创建网站 → 可�
 | 账号配置 | `pa init` | 交互式输入用户名和 API Token，保存到 `~/.pa-cli/config.json` | ✅ |
 | 上传文件 | `pa files upload <本地路径> <远程路径> [-r]` | 单文件上传，`-r` 递归上传目录 | ✅ |
 | 创建 Console | `pa console create [--executable <路径>]` | 默认创建 Bash Console，可通过 `--executable` 指定 | ✅ |
-| 发送命令 | `pa console send <id> <命令>` | 向 Console 发送输入 | ✅ |
-| 获取输出 | `pa console output <id>` | 读取 Console 输出 | ✅ |
+| 发送命令 | `pa console send <命令> [id]` | 向 Console 发送命令并获取输出（自动检测/创建/激活） | ✅ |
 | 销毁 Console | `pa console kill <id>` | 终止 Console | ✅ |
 | 创建 Webapp | `pa webapp create <域名> --python <版本>` | 创建 Web 应用 | ✅ |
 | 配置 Webapp | `pa webapp config <域名> --source-dir <路径> [--virtualenv <路径>]` | 设置源码目录（必需）和虚拟环境路径（可选） | ✅ |
@@ -84,11 +83,11 @@ pythonanywhere-cli/
 │   ├── cli/
 │   │   ├── __init__.py
 │   │   ├── main.py               # Typer 入口，注册所有子命令组
-│   │   ├── init.py               # pa init
-│   │   ├── files.py              # pa files
-│   │   ├── consoles.py           # pa console
-│   │   ├── webapps.py            # pa webapp
-│   │   └── deploy.py             # pa deploy
+│   │   ├── init_cmd.py           # pa init
+│   │   ├── files_cmd.py          # pa files
+│   │   ├── consoles_cmd.py       # pa console
+│   │   ├── webapps_cmd.py        # pa webapp
+│   │   └── deploy_cmd.py         # pa deploy
 │   └── workflows/
 │       ├── __init__.py
 │       └── deploy.py             # 一键部署编排逻辑
@@ -191,7 +190,7 @@ Python >= 3.10
 
 1. `pa init` 能保存账号配置
 2. `pa files upload` 能上传文件到 PA
-3. `pa console create/send/output/kill` 能完整操作 Console
+3. `pa console create/send/kill` 能完整操作 Console
 4. `pa webapp create/config/static/reload` 能创建和管理 Webapp
 5. `pa deploy ./test-site` 能一键部署并返回可访问的 URL
 6. 所有 API 调用带有 Token 认证

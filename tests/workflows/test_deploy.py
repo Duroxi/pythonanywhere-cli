@@ -283,7 +283,7 @@ def test_deploy_creates_webapp(tmp_path):
         )
 
     assert result == "https://testuser.pythonanywhere.com"
-    mock_webapps.create.assert_called_once_with("testuser", "testuser.pythonanywhere.com", "python310")
+    mock_webapps.create.assert_called_once_with("testuser", "testuser.pythonanywhere.com", "python312")
 
 
 def test_deploy_updates_webapp(tmp_path):

@@ -13,12 +13,25 @@ app = typer.Typer(help="Manage web apps on PythonAnywhere.")
 @app.command()
 def create(
     domain_name: str = typer.Argument(..., help="Domain name"),
-    python_version: str = typer.Option("python310", "--python", "-p", help="Python version"),
+    python_version: str = typer.Option("python312", "--python", "-p", help="Python version"),
 ):
     """Create a new web app."""
-    account, client = get_client(WebappsClient)
-    client.create(account["username"], domain_name, python_version)
-    typer.echo(f"Webapp {domain_name} created with {python_version}")
+    try:
+        account, client = get_client(WebappsClient)
+        client.create(account["username"], domain_name, python_version)
+        typer.echo(f"Webapp {domain_name} created with {python_version}")
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NetworkError as e:
+        typer.echo(f"Network error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NotFoundError as e:
+        typer.echo(f"Not found: {e}", err=True)
+        raise typer.Exit(code=1)
+    except APIError as e:
+        typer.echo(f"API error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -30,23 +43,36 @@ def config(
     working_dir: str = typer.Option(None, "--working-dir", "-w", help="Working directory path"),
 ):
     """Configure a web app."""
-    account, client = get_client(WebappsClient)
-    if domain_name is None:
-        domain_name = f"{account['username']}.pythonanywhere.com"
-    kwargs = {}
-    if source_dir:
-        kwargs["source_directory"] = fix_remote_path(source_dir)
-    if virtualenv:
-        kwargs["virtualenv_path"] = fix_remote_path(virtualenv)
-    if python_version:
-        kwargs["python_version"] = python_version
-    if working_dir:
-        kwargs["working_directory"] = fix_remote_path(working_dir)
-    if not kwargs:
-        typer.echo("Error: No configuration specified. Use --source-dir, --virtualenv, --python-version, or --working-dir.", err=True)
+    try:
+        account, client = get_client(WebappsClient)
+        if domain_name is None:
+            domain_name = f"{account['username']}.pythonanywhere.com"
+        kwargs = {}
+        if source_dir:
+            kwargs["source_directory"] = fix_remote_path(source_dir)
+        if virtualenv:
+            kwargs["virtualenv_path"] = fix_remote_path(virtualenv)
+        if python_version:
+            kwargs["python_version"] = python_version
+        if working_dir:
+            kwargs["working_directory"] = fix_remote_path(working_dir)
+        if not kwargs:
+            typer.echo("Error: No configuration specified. Use --source-dir, --virtualenv, --python-version, or --working-dir.", err=True)
+            raise typer.Exit(code=1)
+        client.update(account["username"], domain_name, **kwargs)
+        typer.echo(f"Webapp {domain_name} configured.")
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
         raise typer.Exit(code=1)
-    client.update(account["username"], domain_name, **kwargs)
-    typer.echo(f"Webapp {domain_name} configured.")
+    except NetworkError as e:
+        typer.echo(f"Network error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NotFoundError as e:
+        typer.echo(f"Not found: {e}", err=True)
+        raise typer.Exit(code=1)
+    except APIError as e:
+        typer.echo(f"API error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -56,10 +82,23 @@ def static(
     path: str = typer.Option(..., "--path", help="Directory path"),
 ):
     """Add a static file mapping."""
-    account, client = get_client(WebappsClient)
-    fixed_path = fix_remote_path(path)
-    client.add_static_file(account["username"], domain_name, url=url, path=fixed_path)
-    typer.echo(f"Static mapping added: {url} -> {fixed_path}")
+    try:
+        account, client = get_client(WebappsClient)
+        fixed_path = fix_remote_path(path)
+        client.add_static_file(account["username"], domain_name, url=url, path=fixed_path)
+        typer.echo(f"Static mapping added: {url} -> {fixed_path}")
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NetworkError as e:
+        typer.echo(f"Network error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NotFoundError as e:
+        typer.echo(f"Not found: {e}", err=True)
+        raise typer.Exit(code=1)
+    except APIError as e:
+        typer.echo(f"API error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -67,9 +106,22 @@ def reload(
     domain_name: str = typer.Argument(..., help="Domain name"),
 ):
     """Reload a web app."""
-    account, client = get_client(WebappsClient)
-    client.reload(account["username"], domain_name)
-    typer.echo(f"Webapp {domain_name} reloaded.")
+    try:
+        account, client = get_client(WebappsClient)
+        client.reload(account["username"], domain_name)
+        typer.echo(f"Webapp {domain_name} reloaded.")
+    except AuthError as e:
+        typer.echo(f"Auth error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NetworkError as e:
+        typer.echo(f"Network error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except NotFoundError as e:
+        typer.echo(f"Not found: {e}", err=True)
+        raise typer.Exit(code=1)
+    except APIError as e:
+        typer.echo(f"API error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command("hits")

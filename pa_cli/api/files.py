@@ -9,7 +9,7 @@ class FilesClient(BaseClient):
             username=username,
             remote_path=remote_path.lstrip("/"),
         )
-        response = self.session.post(url, files={"content": content})
+        response = self.session.post(url, files={"content": content}, timeout=(10, 30))
         if response.status_code == 404:
             raise NotFoundError(f"Not found: {remote_path}")
         try:
@@ -25,7 +25,7 @@ class FilesClient(BaseClient):
             username=username,
             remote_path=remote_path,
         )
-        response = self.session.get(url)
+        response = self.session.get(url, timeout=(10, 30))
         if response.status_code == 404:
             raise NotFoundError(f"Not found: {remote_path}")
         try:
@@ -41,7 +41,7 @@ class FilesClient(BaseClient):
             username=username,
             remote_path=remote_path,
         )
-        response = self.session.get(url)
+        response = self.session.get(url, timeout=(10, 30))
         if response.status_code == 404:
             raise NotFoundError(f"Not found: {remote_path}")
         try:
@@ -57,7 +57,7 @@ class FilesClient(BaseClient):
             username=username,
             remote_path=remote_path,
         )
-        response = self.session.delete(url)
+        response = self.session.delete(url, timeout=(10, 30))
         if response.status_code == 404:
             raise NotFoundError(f"Not found: {remote_path}")
         try:
@@ -73,7 +73,10 @@ class FilesClient(BaseClient):
             username=username,
             json={"path": remote_path},
         )
-        return response.json()["url"]
+        data = response.json()
+        if "url" not in data:
+            raise APIError(f"Unexpected response format: {data}")
+        return data["url"]
 
     def unshare(self, username: str, remote_path: str) -> None:
         """Stop sharing a file."""
@@ -92,4 +95,7 @@ class FilesClient(BaseClient):
             username=username,
             params={"path": remote_path},
         )
-        return response.json()["url"]
+        data = response.json()
+        if "url" not in data:
+            raise APIError(f"Unexpected response format: {data}")
+        return data["url"]

@@ -282,7 +282,7 @@ def test_unshare_file_not_found():
         result = runner.invoke(app, ["unshare", "missing.txt"])
 
     assert result.exit_code == 1
-    assert "File not found或未分享" in result.output
+    assert "File not found or not shared" in result.output
 
 
 # --- share-status command tests ---

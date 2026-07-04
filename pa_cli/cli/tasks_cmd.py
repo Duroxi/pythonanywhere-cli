@@ -40,6 +40,20 @@ def create(
     description: str = typer.Option("", "--description", "-d", help="Task description"),
 ):
     """Create a new scheduled task."""
+    # Validate interval
+    valid_intervals = {"hourly", "daily", "weekly", "monthly"}
+    if interval not in valid_intervals:
+        typer.echo(f"Error: Invalid interval '{interval}'. Must be one of: {', '.join(sorted(valid_intervals))}", err=True)
+        raise typer.Exit(code=1)
+
+    # Validate hour and minute
+    if not 0 <= hour <= 23:
+        typer.echo(f"Error: Hour must be between 0 and 23, got {hour}", err=True)
+        raise typer.Exit(code=1)
+    if not 0 <= minute <= 59:
+        typer.echo(f"Error: Minute must be between 0 and 59, got {minute}", err=True)
+        raise typer.Exit(code=1)
+
     try:
         account, client = get_client(TasksClient)
         task = client.create(

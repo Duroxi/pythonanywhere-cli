@@ -17,8 +17,9 @@ def test_init_prompts_username_and_password(tmp_path):
         result = runner.invoke(app, input="testuser\nsecret123\n\n")
 
     assert result.exit_code == 0
-    # Should save username, password, host first
-    mock_save.assert_any_call(username="testuser", password="secret123", host="www.pythonanywhere.com")
+    # Should save username and host first, then password after successful login
+    mock_save.assert_any_call(username="testuser", host="www.pythonanywhere.com")
+    mock_save.assert_any_call(password="secret123")
 
 
 def test_init_auto_fetches_token_on_login_success(tmp_path):
@@ -80,21 +81,24 @@ def test_init_login_exception_shows_error(tmp_path):
     assert "Network error" in result.output
 
 
-def test_init_saves_config_before_login(tmp_path):
-    """init saves username/password/host to config before attempting login."""
+def test_init_saves_username_before_login(tmp_path):
+    """init saves username/host to config before attempting login, password after."""
     call_order = []
     with patch("pa_cli.cli.init_cmd.Config.save") as mock_save, \
          patch("pa_cli.cli.init_cmd.AccountCrawler") as MockCrawler:
         mock_save.side_effect = lambda **kwargs: call_order.append(("save", kwargs))
         mock_crawler = MockCrawler.return_value
-        mock_crawler.login.side_effect = lambda: call_order.append("login") or True
+        mock_crawler.login.side_effect = lambda **kwargs: call_order.append("login") or True
         mock_crawler.get_token.return_value = "token"
 
         runner.invoke(app, input="testuser\nsecret123\n\n")
 
-    # Config.save must be called before login
+    # Config.save (username/host) must be called before login
     assert call_order[0][0] == "save"
+    assert call_order[0][1] == {"username": "testuser", "host": "www.pythonanywhere.com"}
     assert call_order[1] == "login"
+    # Password saved after successful login
+    assert ("save", {"password": "secret123"}) in call_order
 
 
 def test_init_uses_custom_host(tmp_path):
@@ -108,7 +112,8 @@ def test_init_uses_custom_host(tmp_path):
         result = runner.invoke(app, ["-u", "testuser", "-p", "secret123", "-h", "eu.pythonanywhere.com"])
 
     assert result.exit_code == 0
-    mock_save.assert_any_call(username="testuser", password="secret123", host="eu.pythonanywhere.com")
+    mock_save.assert_any_call(username="testuser", host="eu.pythonanywhere.com")
+    mock_save.assert_any_call(password="secret123")
 
 
 def test_init_no_token_prompt_in_input(tmp_path):
@@ -177,4 +182,5 @@ def test_init_default_host():
         result = runner.invoke(app, ["-u", "testuser", "-p", "pass"])
 
     assert result.exit_code == 0
-    mock_save.assert_any_call(username="testuser", password="pass", host="www.pythonanywhere.com")
+    mock_save.assert_any_call(username="testuser", host="www.pythonanywhere.com")
+    mock_save.assert_any_call(password="pass")

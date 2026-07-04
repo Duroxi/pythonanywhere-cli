@@ -31,7 +31,7 @@ pythonanywhere-clis (`pa`) is a command-line interface for [PythonAnywhere](http
 
 ## Status
 
-**Completed**: 42 commands implemented, 412 tests passing.
+**Completed**: 48 commands implemented, 473 tests passing.
 
 ## Development
 

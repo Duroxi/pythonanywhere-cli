@@ -11,7 +11,7 @@ app = typer.Typer(help="Deploy a local project to PythonAnywhere.")
 def deploy(
     local_dir: str = typer.Argument(..., help="Local project directory"),
     domain: str = typer.Option(None, "--domain", "-d", help="Domain name (default: {username}.pythonanywhere.com)"),
-    python_version: str = typer.Option("python310", "--python", "-p", help="Python version"),
+    python_version: str = typer.Option("python312", "--python", "-p", help="Python version"),
     dry_run: bool = typer.Option(False, "--dry-run", "-n", help="Preview deploy without executing"),
 ):
     """Deploy a local project to PythonAnywhere."""

@@ -20,6 +20,10 @@ class BaseClient:
         path_params = {k for k in kwargs if "{" + k + "}" in path}
         request_kwargs = {k: v for k, v in kwargs.items() if k not in path_params}
 
+        # Add default timeout if not specified
+        if "timeout" not in request_kwargs:
+            request_kwargs["timeout"] = (10, 30)  # (connect, read) timeout in seconds
+
         try:
             response = self.session.request(method, url, **request_kwargs)
         except requests.ConnectionError as e:
@@ -30,7 +34,7 @@ class BaseClient:
             raise NetworkError(f"Request failed: {e}") from e
 
         if response.status_code == 404:
-            raise NotFoundError(f"Not found: {path}")
+            raise NotFoundError(f"Not found: {url}")
 
         try:
             response.raise_for_status()

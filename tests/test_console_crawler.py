@@ -33,7 +33,7 @@ def test_login_success_redirects_away_from_login_page():
         result = crawler.login("testuser", "testpass")
 
         assert result is True
-        mock_get.assert_called_once_with("https://www.pythonanywhere.com/login/")
+        mock_get.assert_called_once_with("https://www.pythonanywhere.com/login/", timeout=(10, 30))
         mock_post.assert_called_once()
         posted_data = mock_post.call_args[1]["data"]
         assert posted_data["csrfmiddlewaretoken"] == "test-csrf-token"
@@ -137,7 +137,7 @@ def test_list_returns_list():
         result = crawler.list("testuser")
 
     assert result == mock_consoles
-    mock_get.assert_called_once_with("https://www.pythonanywhere.com/api/v0/user/testuser/consoles/")
+    mock_get.assert_called_once_with("https://www.pythonanywhere.com/api/v0/user/testuser/consoles/", timeout=(10, 30))
 
 
 def test_list_empty():
@@ -172,7 +172,7 @@ def test_list_uses_dynamic_host():
     with patch.object(crawler.session, "get", return_value=mock_resp) as mock_get:
         crawler.list("testuser")
 
-    mock_get.assert_called_once_with("https://eu.pythonanywhere.com/api/v0/user/testuser/consoles/")
+    mock_get.assert_called_once_with("https://eu.pythonanywhere.com/api/v0/user/testuser/consoles/", timeout=(10, 30))
 
 
 # --- create tests ---
@@ -283,7 +283,8 @@ def test_activate_connects_via_websocket():
         crawler.activate("testuser", 46955916)
 
     mock_get.assert_called_once_with(
-        "https://www.pythonanywhere.com/user/testuser/consoles/46955916/frame/"
+        "https://www.pythonanywhere.com/user/testuser/consoles/46955916/frame/",
+        timeout=(10, 30),
     )
     mock_ws_mod.create_connection.assert_called_once_with(
         "wss://consoles-10.pythonanywhere.com/sj/websocket"
@@ -362,7 +363,8 @@ def test_activate_uses_dynamic_host():
         crawler.activate("testuser", 46955916)
 
     mock_get.assert_called_once_with(
-        "https://eu.pythonanywhere.com/user/testuser/consoles/46955916/frame/"
+        "https://eu.pythonanywhere.com/user/testuser/consoles/46955916/frame/",
+        timeout=(10, 30),
     )
 
 

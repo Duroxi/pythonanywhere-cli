@@ -19,12 +19,13 @@ class AccountCrawler:
             "Upgrade-Insecure-Requests": "1",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
         })
+        self.timeout = (10, 30)  # (connect, read) timeout in seconds
 
     def register(self, username: str, email: str, password: str) -> bool:
         register_url = f"{self.base_url}/registration/register/beginner/"
 
         try:
-            register_page_resp = self.session.get(register_url)
+            register_page_resp = self.session.get(register_url, timeout=self.timeout)
             register_page_resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch registration page: {e}") from e
@@ -50,7 +51,7 @@ class AccountCrawler:
         }
 
         try:
-            register_resp = self.session.post(register_url, data=data, headers=headers)
+            register_resp = self.session.post(register_url, data=data, headers=headers, timeout=self.timeout)
             register_resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Registration request failed: {e}") from e
@@ -83,7 +84,7 @@ class AccountCrawler:
         login_url = f"{self.base_url}/login/"
 
         try:
-            login_page_resp = self.session.get(login_url)
+            login_page_resp = self.session.get(login_url, timeout=self.timeout)
             login_page_resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch login page: {e}") from e
@@ -106,7 +107,7 @@ class AccountCrawler:
         }
 
         try:
-            login_resp = self.session.post(login_url, data=data, headers=headers)
+            login_resp = self.session.post(login_url, data=data, headers=headers, timeout=self.timeout)
             login_resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Login request failed: {e}") from e
@@ -127,7 +128,7 @@ class AccountCrawler:
         account_url = f"{self.base_url}/user/{resolved}/account/"
 
         try:
-            resp = self.session.get(account_url)
+            resp = self.session.get(account_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch account page: {e}") from e
@@ -147,7 +148,7 @@ class AccountCrawler:
         account_url = f"{self.base_url}/user/{resolved}/account/"
 
         try:
-            resp = self.session.get(account_url)
+            resp = self.session.get(account_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch account page: {e}") from e
@@ -169,7 +170,7 @@ class AccountCrawler:
         headers = {"Referer": account_url}
 
         try:
-            post_resp = self.session.post(post_url, data=data, headers=headers)
+            post_resp = self.session.post(post_url, data=data, headers=headers, timeout=self.timeout)
         except requests.RequestException as e:
             raise NetworkError(f"Token creation request failed: {e}") from e
 
@@ -178,7 +179,7 @@ class AccountCrawler:
 
         # Re-fetch account page to read the newly created token
         try:
-            resp2 = self.session.get(account_url)
+            resp2 = self.session.get(account_url, timeout=self.timeout)
             resp2.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch account page after token creation: {e}") from e
@@ -195,7 +196,7 @@ class AccountCrawler:
         webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
-            resp = self.session.get(webapps_url)
+            resp = self.session.get(webapps_url, timeout=self.timeout)
             if resp.status_code != 200:
                 raise APIError(f"Webapps page returned HTTP {resp.status_code}")
         except requests.RequestException as e:
@@ -224,7 +225,7 @@ class AccountCrawler:
         headers = {"Referer": webapps_url}
 
         try:
-            extend_resp = self.session.post(extend_url, data=data, headers=headers)
+            extend_resp = self.session.post(extend_url, data=data, headers=headers, timeout=self.timeout)
         except requests.RequestException as e:
             raise NetworkError(f"Extend request failed: {e}") from e
 
@@ -236,7 +237,7 @@ class AccountCrawler:
         webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
-            resp = self.session.get(webapps_url)
+            resp = self.session.get(webapps_url, timeout=self.timeout)
             if resp.status_code != 200:
                 return None
         except requests.RequestException:
@@ -253,7 +254,7 @@ class AccountCrawler:
         webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
-            resp = self.session.get(webapps_url)
+            resp = self.session.get(webapps_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch webapps page: {e}") from e
@@ -271,7 +272,7 @@ class AccountCrawler:
         }
 
         try:
-            reload_resp = self.session.post(reload_url, headers=headers)
+            reload_resp = self.session.post(reload_url, headers=headers, timeout=self.timeout)
         except requests.RequestException as e:
             raise NetworkError(f"Reload request failed: {e}") from e
 
@@ -287,7 +288,7 @@ class AccountCrawler:
         }
 
         try:
-            resp = self.session.get(hits_url, headers=headers)
+            resp = self.session.get(hits_url, headers=headers, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch hits: {e}") from e
@@ -300,7 +301,7 @@ class AccountCrawler:
         webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
-            resp = self.session.get(webapps_url)
+            resp = self.session.get(webapps_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch webapps page: {e}") from e
@@ -319,7 +320,7 @@ class AccountCrawler:
         headers = {"Referer": webapps_url}
 
         try:
-            enable_resp = self.session.post(enable_url, data=data, headers=headers)
+            enable_resp = self.session.post(enable_url, data=data, headers=headers, timeout=self.timeout)
         except requests.RequestException as e:
             raise NetworkError(f"Enable request failed: {e}") from e
 
@@ -331,7 +332,7 @@ class AccountCrawler:
         webapps_url = f"{self.base_url}/user/{resolved}/webapps/"
 
         try:
-            resp = self.session.get(webapps_url)
+            resp = self.session.get(webapps_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch webapps page: {e}") from e
@@ -350,7 +351,7 @@ class AccountCrawler:
         headers = {"Referer": webapps_url}
 
         try:
-            disable_resp = self.session.post(disable_url, data=data, headers=headers)
+            disable_resp = self.session.post(disable_url, data=data, headers=headers, timeout=self.timeout)
         except requests.RequestException as e:
             raise NetworkError(f"Disable request failed: {e}") from e
 
@@ -362,7 +363,7 @@ class AccountCrawler:
         quota_url = f"{self.base_url}/user/{resolved}/quota_information/"
 
         try:
-            resp = self.session.get(quota_url)
+            resp = self.session.get(quota_url, timeout=self.timeout)
             resp.raise_for_status()
         except requests.RequestException as e:
             raise NetworkError(f"Failed to fetch disk usage: {e}") from e

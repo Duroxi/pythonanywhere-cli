@@ -180,6 +180,7 @@ class Config:
 
         data["default_account"] = target_username
         CONFIG_PATH.write_text(json.dumps(data, indent=2))
+        CONFIG_PATH.chmod(0o600)
 
     @staticmethod
     def load(username: str | None = None, verbose: bool = False) -> dict:
@@ -236,6 +237,7 @@ class Config:
             raise ValueError(f"Account '{username}' not found in config.")
         data["default_account"] = username
         CONFIG_PATH.write_text(json.dumps(data, indent=2))
+        CONFIG_PATH.chmod(0o600)
 
     @staticmethod
     def remove(username: str) -> str | None:
@@ -257,4 +259,5 @@ class Config:
             else:
                 data["default_account"] = ""
         CONFIG_PATH.write_text(json.dumps(data, indent=2))
+        CONFIG_PATH.chmod(0o600)
         return new_default

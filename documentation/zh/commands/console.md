@@ -8,7 +8,7 @@
 |------|------|---------|
 | `pa console list` | 列出所有 console | Token |
 | `pa console create` | 创建新 console | Token |
-| `pa console send <id> <cmd>` | 发送命令并获取输出 | Token |
+| `pa console send <cmd> [id]` | 发送命令并获取输出（自动检测 console） | Token |
 | `pa console kill <id>` | 销毁 console | Token |
 | `pa console activate <id>` | 激活 console | 密码 |
 | `pa console get-or-create` | 智能获取或创建 | 密码 |
@@ -107,20 +107,20 @@ Error: API error 400: You have too many consoles.
 
 ## pa console send
 
-向控制台发送命令并获取输出。
+向控制台发送命令并获取输出。自动检测、创建和激活 console。
 
 ### 语法
 
 ```bash
-pa console send <console_id> <command> [--wait/--no-wait] [--timeout <seconds>]
+pa console send <command> [console_id] [--wait/--no-wait] [--timeout <seconds>]
 ```
 
 ### 参数
 
 | 参数 | 说明 |
 |------|------|
-| `console_id` | 控制台 ID |
 | `command` | 要执行的命令 |
+| `console_id` | 控制台 ID（可选，省略时自动检测） |
 
 ### 选项
 
@@ -132,42 +132,38 @@ pa console send <console_id> <command> [--wait/--no-wait] [--timeout <seconds>]
 
 ### 示例
 
-**发送命令并获取输出：**
+**发送命令（自动检测 console）：**
 
 ```bash
-$ pa console send 46955916 "echo hello"
-16:16 ~ $ echo hello
+$ pa console send "echo hello"
 hello
-16:16 ~ $
+```
+
+**发送命令到指定 console：**
+
+```bash
+$ pa console send "echo hello" 46955916
+hello
 ```
 
 **只发送命令，不等待：**
 
 ```bash
-$ pa console send 46955916 "long-running-command" --no-wait
+$ pa console send "long-running-command" --no-wait
 ```
 
 **自定义超时时间：**
 
 ```bash
-$ pa console send 46955916 "pip install flask" --timeout 120
+$ pa console send "pip install flask" --timeout 120
 ```
 
 ### 错误场景
 
-**Console 未启动：**
+**Console 不存在（指定 ID 时）：**
 
 ```bash
-$ pa console send 46955916 "ls"
-Error: API error 412: Console not yet started.
-```
-
-**解决方案**：先运行 `pa console activate 46955916` 激活 console。
-
-**Console 不存在：**
-
-```bash
-$ pa console send 99999 "ls"
+$ pa console send "ls" 99999
 Error: API error 404: Not found.
 ```
 
@@ -176,8 +172,7 @@ Error: API error 404: Not found.
 ### 前置条件
 
 - 需先运行 `pa init` 完成账户配置
-- 需先创建 console（`pa console create` 或 `pa console get-or-create`）
-- 如果 console 未启动，需先运行 `pa console activate <id>`
+- 自动检测模式需要存储密码（`pa account login`）以支持自动创建/激活
 
 ---
 
@@ -330,7 +325,22 @@ Password not found. Run 'pa account login' first.
 
 ## 典型工作流程
 
-### 完整的 console 使用流程
+### 简化流程（推荐）
+
+```bash
+# 直接发送命令 - 自动检测、创建和激活 console
+$ pa console send "ls -la"
+total 8
+drwxr-xr-x 2 user user 4096 Jun  3 16:16 .
+drwxr-xr-x 3 user user 4096 Jun  3 16:16 ..
+-rw-r--r-- 1 user user   18 Jun  3 16:16 README.txt
+
+# 用完后销毁
+$ pa console kill 46955916
+Console 46955916 killed.
+```
+
+### 手动流程（调试用）
 
 ```bash
 # 1. 查看现有 consoles
@@ -341,8 +351,8 @@ ID: 46955916, Name: Bash console 46955916
 $ pa console activate 46955916
 Console 46955916 activated successfully.
 
-# 3. 发送命令
-$ pa console send 46955916 "ls -la"
+# 3. 发送命令到指定 console
+$ pa console send "ls -la" 46955916
 total 8
 drwxr-xr-x 2 user user 4096 Jun  3 16:16 .
 drwxr-xr-x 3 user user 4096 Jun  3 16:16 ..
@@ -351,23 +361,4 @@ drwxr-xr-x 3 user user 4096 Jun  3 16:16 ..
 # 4. 用完后销毁
 $ pa console kill 46955916
 Console 46955916 killed.
-```
-
-### 使用 get-or-create 简化流程
-
-```bash
-# 自动获取或创建 console
-$ pa console get-or-create
-Console ready: 46955916
-
-# 直接使用（如果 console 已激活）
-$ pa console send 46955916 "echo hello"
-hello
-
-# 如果 console 未激活，先激活
-$ pa console activate 46955916
-Console 46955916 activated successfully.
-
-$ pa console send 46955916 "echo hello"
-hello
 ```
