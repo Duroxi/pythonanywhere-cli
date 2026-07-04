@@ -53,27 +53,21 @@ pa deploy ./my-site --dry-run
 # 1. Upload files
 pa files upload ./myproject /home/myuser/myproject -r
 
-# 2. Create console
-pa console create
+# 2. Setup virtual environment (auto-creates/activates console)
+pa console send "cd /home/myuser/myproject"
+pa console send "mkvirtualenv myproject --python=/usr/bin/python310"
+pa console send "workon myproject && pip install -r requirements.txt"
 
-# 3. Activate console
-pa console activate 12345
-
-# 4. Setup virtual environment
-pa console send 12345 "cd /home/myuser/myproject"
-pa console send 12345 "mkvirtualenv myproject --python=/usr/bin/python310"
-pa console send 12345 "workon myproject && pip install -r requirements.txt"
-
-# 5. Create web app
+# 3. Create web app
 pa webapp create myuser.pythonanywhere.com
 
-# 6. Configure source directory
+# 4. Configure source directory
 pa webapp config myuser.pythonanywhere.com -s /home/myuser/myproject
 
-# 7. Add static files
+# 5. Add static files
 pa webapp static myuser.pythonanywhere.com --url /static/ --path /home/myuser/myproject/static
 
-# 8. Reload web app
+# 6. Reload web app
 pa webapp reload myuser.pythonanywhere.com
 ```
 
@@ -153,8 +147,8 @@ pa console create
 pa console activate 12345
 
 # 3. Send commands
-pa console send 12345 "ls -la"
-pa console send 12345 "python --version"
+pa console send "ls -la"
+pa console send "python --version"
 
 # 4. Clean up
 pa console kill 12345
@@ -163,6 +157,9 @@ pa console kill 12345
 ### Smart Console Management
 
 ```bash
+# Send command directly (auto-detects/creates/activates)
+pa console send "ls -la"
+
 # Get existing or create new
 pa console get-or-create
 
@@ -174,10 +171,10 @@ pa console get-or-create -e python3.10
 
 ```bash
 # With custom timeout
-pa console send 12345 "pip install flask" --timeout 120
+pa console send "pip install flask" --timeout 120
 
 # Without waiting
-pa console send 12345 "long-running-command" --no-wait
+pa console send "long-running-command" --no-wait
 ```
 
 ---
@@ -366,7 +363,7 @@ pa webapp reload myuser.pythonanywhere.com
 ```bash
 pa webapp logs --type error --lines 50
 pa console get-or-create
-pa console send 12345 "cd /home/myuser/myproject && python app.py"
+pa console send "cd /home/myuser/myproject && python app.py"
 ```
 
 ### Backup Project

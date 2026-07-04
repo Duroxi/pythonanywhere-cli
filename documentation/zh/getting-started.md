@@ -199,9 +199,9 @@ pa files upload ./static /home/user/site/static -r            # 上传目录
 
 ```bash
 pa console list                      # 列出所有 console
-pa console create                    # 创建新 console
-pa console send 12345 "ls -la"       # 发送命令并获取输出
-pa console activate 12345            # 激活 console
+pa console send "ls -la"             # 发送命令（自动检测/创建/激活）
+pa console send "ls -la" 12345       # 发送到指定 console
+pa console activate 12345            # 激活 console（手动）
 pa console get-or-create             # 智能获取或创建
 pa console kill 12345                # 销毁 console
 ```

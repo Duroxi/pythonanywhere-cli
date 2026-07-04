@@ -20,7 +20,7 @@ Complete guide for using `pythonanywhere-clis` (`pa`) to manage PythonAnywhere r
 - **Documentation**: https://pythonanywhere-clis.readthedocs.io
 - **PyPI**: https://pypi.org/project/pythonanywhere-clis/
 - **Install**: `pip install pythonanywhere-clis`
-- **Version**: 1.0.0
+- **Version**: 1.1.0
 - **License**: MIT
 - **Python**: 3.10+
 
@@ -135,12 +135,15 @@ pa files rm /home/myuser/old.txt
 # List consoles
 pa console list
 
-# Create and activate console
+# Send command (auto-detects/creates/activates console)
+pa console send "ls -la"
+
+# Send command to specific console
+pa console send "ls -la" 12345
+
+# Manual create and activate (for debugging)
 pa console create
 pa console activate 12345
-
-# Send command
-pa console send 12345 "ls -la"
 
 # Smart get or create
 pa console get-or-create
@@ -221,6 +224,7 @@ pa account login    # Store password
 ### Command fails with "Console not yet started"
 ```bash
 pa console activate <id>    # Activate console
+# Note: pa console send now auto-activates, so this is rarely needed
 ```
 
 ### Command fails with "Rate limit exceeded"
@@ -267,7 +271,7 @@ pa account extend    # Extend expiry
 ## Tips
 
 1. Use `--dry-run` with `pa deploy` to preview changes before executing
-2. Use `pa console get-or-create` for automatic console lifecycle management
+2. Use `pa console send "command"` directly — it auto-detects, creates, and activates consoles
 3. For long-running commands, use `--timeout` to extend wait time
 4. Store password with `pa account login` for commands requiring Session auth
 5. Use `pa account extend` regularly to prevent free tier account expiration

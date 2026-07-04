@@ -199,9 +199,9 @@ pa files upload ./static /home/user/site/static -r            # Upload directory
 
 ```bash
 pa console list                      # List all consoles
-pa console create                    # Create new console
-pa console send 12345 "ls -la"       # Send command and get output
-pa console activate 12345            # Activate console
+pa console send "ls -la"             # Send command (auto-detects/creates/activates)
+pa console send "ls -la" 12345       # Send to specific console
+pa console activate 12345            # Activate console (manual)
 pa console get-or-create             # Smart get or create
 pa console kill 12345                # Kill console
 ```

@@ -149,10 +149,9 @@ The maximum wait time for console commands during deployment is 300 seconds (5 m
 ```bash
 # Equivalent operations
 pa files upload ./my-site /home/myuser/my-site -r
-pa console create
-pa console send <id> "cd /home/myuser/my-site"
-pa console send <id> "mkvirtualenv my-site --python=/usr/bin/python310"
-pa console send <id> "workon my-site && pip install -r requirements.txt"
+pa console send "cd /home/myuser/my-site"
+pa console send "mkvirtualenv my-site --python=/usr/bin/python310"
+pa console send "workon my-site && pip install -r requirements.txt"
 pa webapp create myuser.pythonanywhere.com
 pa webapp config myuser.pythonanywhere.com -s /home/myuser/my-site
 pa webapp static myuser.pythonanywhere.com --url /static/ --path /home/myuser/my-site/static

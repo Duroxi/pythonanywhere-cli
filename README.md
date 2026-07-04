@@ -150,7 +150,7 @@ pa account extend                                    # Extend expiry
 ```bash
 pa console list                  # See available consoles
 pa console send "ls -la"        # Run a command (auto-detects/creates/activates console)
-pa console send 12345 "ls -la"  # Run on specific console
+pa console send "ls -la" 12345  # Run on specific console
 pa console kill 12345           # Clean up
 ```
 

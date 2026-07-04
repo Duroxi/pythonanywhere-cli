@@ -202,16 +202,16 @@ pa console create --executable python3.10
 
 ### pa console send
 
-Send command to console and get output.
+Send command to console and get output. Auto-detects, creates, and activates console if needed.
 
 **Syntax:**
 ```bash
-pa console send <console_id> <command> [--wait/--no-wait] [--timeout <seconds>]
+pa console send <command> [console_id] [--wait/--no-wait] [--timeout <seconds>]
 ```
 
 **Parameters:**
-- `console_id` (required): Console ID
 - `command` (required): Command to execute
+- `console_id` (optional): Console ID (auto-detected if omitted)
 
 **Options:**
 
@@ -223,9 +223,10 @@ pa console send <console_id> <command> [--wait/--no-wait] [--timeout <seconds>]
 
 **Examples:**
 ```bash
-pa console send 46955916 "echo hello"
-pa console send 46955916 "pip install flask" --timeout 120
-pa console send 46955916 "long-command" --no-wait
+pa console send "echo hello"                    # Auto-detect console
+pa console send "echo hello" 46955916           # Specific console
+pa console send "pip install flask" --timeout 120
+pa console send "long-command" --no-wait
 ```
 
 ---

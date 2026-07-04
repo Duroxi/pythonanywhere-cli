@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-04
+
+### Security
+
+- Add `shlex.quote()` to deploy.py shell commands to prevent injection
+- Add `chmod(0o600)` to config file writes for credential protection
+- Fix init_cmd.py to save password only after successful login verification
+- Add request timeouts (10s connect, 30s read) to all HTTP calls
+
+### Improved
+
+- `pa console send` now auto-detects, creates, and activates console
+- Add input validation for `pa tasks create` (interval, hour, minute)
+- Update default Python version from python310 to python312
+- Consistent error handling (AuthError) across all CLI commands
+- Show resolved URL in NotFoundError instead of template path
+- Remove empty `@app.callback()` from files and console commands
+- Fix Chinese string in files unshare error message
+
+### Documentation
+
+- Fix `pa console send` argument order in all docs
+- Update test counts to 473 across README, CLAUDE.md, CHANGELOG
+- Remove phantom `pa console output` command from prd-mvp.md
+- Fix file names in prd-mvp.md directory structure
+
 ## [1.0.0] - 2026-06-20
 
 ### Added
