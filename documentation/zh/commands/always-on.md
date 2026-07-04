@@ -13,6 +13,8 @@ Always-on 任务管理相关的命令，用于创建、查看和删除长驻进�
 | `pa always-on list` | 列出所有 Always-on 任务 | Token |
 | `pa always-on create <command>` | 创建 Always-on 任务 | Token |
 | `pa always-on delete <id>` | 删除 Always-on 任务 | Token |
+| `pa always-on update <id>` | 更新 Always-on 任务 | Token |
+| `pa always-on restart <id>` | 重启 Always-on 任务 | Token |
 
 ---
 

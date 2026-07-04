@@ -278,7 +278,7 @@ pa account login
 
 Some commands (such as `pa account token`, `pa account extend`, `pa console activate`, `pa console get-or-create`) require simulating login via the crawler, which necessitates storing the password locally. This command only saves the password to `~/.pa-cli/config.json` and does not perform a login operation.
 
-The password is stored in plaintext in the configuration file.
+The password is encrypted and stored in the configuration file.
 
 ### Example
 

@@ -35,7 +35,7 @@
 ### 控制台管理
 - `pa console list` - 列出控制台
 - `pa console create` - 创建控制台
-- `pa console send <id> <cmd>` - 发送命令
+- `pa console send <cmd> [id]` - 发送命令（自动检测 console）
 
 ### Web 应用管理
 - `pa webapp create` - 创建 Web 应用

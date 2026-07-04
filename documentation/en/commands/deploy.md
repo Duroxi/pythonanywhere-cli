@@ -25,7 +25,7 @@ pa deploy <local_dir> [--domain <domain>] [--python <python_version>] [--dry-run
 | Option | Default | Description |
 |--------|---------|-------------|
 | `-d`, `--domain` | `{username}.pythonanywhere.com` | Target domain name |
-| `-p`, `--python` | `python310` | Python version |
+| `-p`, `--python` | `python312` | Python version |
 | `-n`, `--dry-run` | False | Preview deploy without executing |
 
 ### Description

@@ -24,7 +24,7 @@ pa webapp create <domain_name> [-p <python_version> | --python <python_version>]
 
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
-| `-p`, `--python` | `python310` | Python 版本，如 `python38`、`python310`、`python311` |
+| `-p`, `--python` | `python312` | Python 版本，如 `python310`、`python311`、`python312` |
 
 ### 示例
 
@@ -32,7 +32,7 @@ pa webapp create <domain_name> [-p <python_version> | --python <python_version>]
 
 ```bash
 $ pa webapp create myuser.pythonanywhere.com
-Webapp myuser.pythonanywhere.com created with python310
+Webapp myuser.pythonanywhere.com created with python312
 ```
 
 **指定 Python 版本：**

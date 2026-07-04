@@ -295,7 +295,7 @@ pa deploy <local_dir> [--domain <domain>] [--python <python_version>] [--dry-run
 | Option | Default | Description |
 |--------|---------|-------------|
 | `-d`, `--domain` | `{username}.pythonanywhere.com` | Target domain |
-| `-p`, `--python` | `python310` | Python version |
+| `-p`, `--python` | `python312` | Python version |
 | `-n`, `--dry-run` | False | Preview without executing |
 
 **Examples:**
@@ -652,7 +652,7 @@ pa webapp create <domain_name> [-p <python_version>]
 ```
 
 **Options:**
-- `-p`, `--python` (default: `python310`): Python version
+- `-p`, `--python` (default: `python312`): Python version
 
 **Example:**
 ```bash

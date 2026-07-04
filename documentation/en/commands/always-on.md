@@ -13,6 +13,8 @@ Always-on tasks management commands for creating, viewing, and deleting long-run
 | `pa always-on list` | List all always-on tasks | Token |
 | `pa always-on create <command>` | Create always-on task | Token |
 | `pa always-on delete <id>` | Delete always-on task | Token |
+| `pa always-on update <id>` | Update always-on task | Token |
+| `pa always-on restart <id>` | Restart always-on task | Token |
 
 ---
 

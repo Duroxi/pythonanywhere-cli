@@ -24,7 +24,7 @@ pa webapp create <domain_name> [-p <python_version> | --python <python_version>]
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `-p`, `--python` | `python310` | Python version, e.g., `python38`, `python310`, `python311` |
+| `-p`, `--python` | `python312` | Python version, e.g., `python310`, `python311`, `python312` |
 
 ### Examples
 
@@ -32,7 +32,7 @@ pa webapp create <domain_name> [-p <python_version> | --python <python_version>]
 
 ```bash
 $ pa webapp create myuser.pythonanywhere.com
-Webapp myuser.pythonanywhere.com created with python310
+Webapp myuser.pythonanywhere.com created with python312
 ```
 
 **Specify Python version:**

@@ -278,7 +278,7 @@ pa account login
 
 部分命令（如 `pa account token`、`pa account extend`、`pa console activate`、`pa console get-or-create`）需要通过爬虫模拟登录，因此需要在本地保存密码。此命令仅将密码保存到 `~/.pa-cli/config.json`，不会执行登录操作。
 
-密码以明文形式存储在配置文件中。
+密码加密后存储在配置文件中。
 
 ### 示例
 

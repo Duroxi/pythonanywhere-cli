@@ -35,7 +35,7 @@
 ### Console Management
 - `pa console list` - List consoles
 - `pa console create` - Create console
-- `pa console send <id> <cmd>` - Send command
+- `pa console send <cmd> [id]` - Send command (auto-detects console)
 
 ### Web App Management
 - `pa webapp create` - Create web app
