@@ -5,9 +5,9 @@ from pa_cli.exceptions import APIError, NotFoundError
 class FilesClient(BaseClient):
     def upload(self, username: str, remote_path: str, content: bytes) -> int:
         url = self._build_url(
-            "/api/v0/user/{username}/files/path{remote_path}",
+            "/api/v0/user/{username}/files/path/{remote_path}",
             username=username,
-            remote_path=remote_path,
+            remote_path=remote_path.lstrip("/"),
         )
         response = self.session.post(url, files={"content": content})
         if response.status_code == 404:

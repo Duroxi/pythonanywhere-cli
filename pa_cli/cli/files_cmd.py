@@ -15,14 +15,18 @@ def main():
     pass
 
 
-def _resolve_path(path: str | None, username: str) -> str:
+def _resolve_path(path: str | None, username: str, is_dir: bool = True) -> str:
     """Resolve remote path. Relative paths are under /home/{username}/."""
     if not path:
         return f"/home/{username}/"
     path = fix_remote_path(path)
     if path.startswith("/"):
-        return path if path.endswith("/") else path + "/"
-    return f"/home/{username}/{path}".rstrip("/") + "/"
+        if is_dir:
+            return path if path.endswith("/") else path + "/"
+        return path.rstrip("/")
+    if is_dir:
+        return f"/home/{username}/{path}".rstrip("/") + "/"
+    return f"/home/{username}/{path}".rstrip("/")
 
 
 @app.command("ls")
@@ -143,21 +147,24 @@ def upload(
     try:
         account, client = get_client(FilesClient)
 
+        is_dir = local.is_dir()
+        resolved = _resolve_path(remote_path, account["username"], is_dir=is_dir)
+
         if local.is_file():
             content = local.read_bytes()
-            status = client.upload(account["username"], remote_path, content)
-            typer.echo(f"Uploaded {local_path} -> {remote_path} (HTTP {status})")
+            status = client.upload(account["username"], resolved, content)
+            typer.echo(f"Uploaded {local_path} -> {resolved} (HTTP {status})")
         else:
             # Recursive directory upload
             count = 0
             for file in local.rglob("*"):
                 if file.is_file():
                     relative = file.relative_to(local)
-                    remote = f"{remote_path.rstrip('/')}/{relative}".replace("\\", "/")
+                    remote = f"{resolved.rstrip('/')}/{relative}".replace("\\", "/")
                     content = file.read_bytes()
                     client.upload(account["username"], remote, content)
                     count += 1
-            typer.echo(f"Uploaded {count} files to {remote_path}")
+            typer.echo(f"Uploaded {count} files to {resolved}")
     except NotFoundError as e:
         typer.echo(f"Path not found: {e}", err=True)
         raise typer.Exit(code=1)

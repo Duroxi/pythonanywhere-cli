@@ -4,7 +4,7 @@ from pa_cli.api.system import SystemClient
 from pa_cli.cli.utils import get_client
 from pa_cli.config import Config
 from pa_cli.crawler.account_crawler import AccountCrawler
-from pa_cli.exceptions import AuthError, NetworkError, NotFoundError
+from pa_cli.exceptions import AuthError, NetworkError, NotFoundError, APIError
 
 app = typer.Typer(help="Query system status and resource usage.")
 
